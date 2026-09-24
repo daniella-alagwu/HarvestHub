@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
+import 'package:harvesthub/presentation/screens/auth/login_screen.dart';
+import 'package:harvesthub/presentation/screens/auth/role_selection_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -11,105 +13,142 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            children: [
-              const Spacer(flex: 2),
-
-              Image.asset(
-                'assets/splash_screen/logo_full_combined.png',
-                width: 210,
+      body: Stack(
+        children: [
+         //image
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.45, 
+              child: Image.asset(
+                'assets/images/bg_images/farming.jpeg',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    const SizedBox.shrink(),
               ),
-              const SizedBox(height: 28),
-
-              Text(
-                'Fresh from Farms,\nDirect to You',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.headingLarge.copyWith(fontSize: 26),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Browse fresh produce from local farmers, compare prices, '
-                'and order straight from the source.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.bodyMuted,
-              ),
-
-              const SizedBox(height: 32),
-              const _FeatureRow(),
-
-              const Spacer(flex: 3),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                   
-                    debugPrint('Get Started tapped → role selection');
-                  },
-                  child: const Text('Get Started'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () {
-                  
-                  debugPrint('Login tapped → login screen');
-                },
-                child: Text(
-                  'I already have an account',
-                  style: AppTextStyles.bodyRegular.copyWith(
-                    color: AppColors.deepGreen,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-}
 
-class _FeatureRow extends StatelessWidget {
-  const _FeatureRow();
+       
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.background.withOpacity(0.15), 
+                    AppColors.background.withOpacity(0.10), 
+                    AppColors.background.withOpacity(0.45), 
+                  ],
+                  stops: const [0.0, 0.45, 1.0],
+                ),
+              ),
+            ),
+          ),
 
-  static const _features = [
-    (Icons.eco_outlined, 'Fresh &\nHealthy'),
-    (Icons.location_on_outlined, 'Locally\nSourced'),
-    (Icons.groups_outlined, 'Support\nFarmers'),
-    (Icons.shopping_basket_outlined, 'Easy\nOrdering'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: _features
-          .map(
-            (f) => Expanded(
+          
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: AppColors.softGreen,
-                    child: Icon(f.$1, color: AppColors.mainGreen, size: 22),
+                  const Spacer(flex: 2),
+
+                  //logo
+                  Center(
+                    child: Image.asset(
+                      'assets/splash_screen/logo_full_combined.png',
+                      height: 200,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: const BoxDecoration(
+                              color: AppColors.softGreen,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.agriculture_rounded,
+                              size: 72,
+                              color: AppColors.mainGreen,
+                            ),
+                          ),
+                    ),
                   ),
-                  const SizedBox(height: 8),
+
+                 
                   Text(
-                    f.$2,
+                    'Direct from local farms to your table.\nFresh produce, honest pricing, zero middleman.',
                     textAlign: TextAlign.center,
-                    style: AppTextStyles.caption,
+                    style: TextStyle(
+                      fontSize: 15,
+                      height: 1.7,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
+
+                  const Spacer(flex: 1),
+
+                
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.mainGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 2,
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, RoleSelectionScreen.routeName);
+                      },
+                      child: const Text(
+                        'Get Started',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                 
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textPrimary,
+                        backgroundColor: AppColors.surface.withOpacity(0.90), 
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(color: AppColors.border, width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, LoginScreen.routeName);
+                      },
+                      child: const Text(
+                        'I Already Have an Account',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
                 ],
               ),
             ),
-          )
-          .toList(),
+          ),
+        ],
+      ),
     );
   }
 }
