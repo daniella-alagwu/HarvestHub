@@ -20,7 +20,7 @@ dependencies:
   firebase_auth: ^5.3.1
   cloud_firestore: ^5.4.3
 
-  # State management 
+  # State management
   provider: ^6.1.2
 
   # Networking & AI Integration
@@ -49,6 +49,7 @@ flutter:
     - assets/images/
     - assets/images/products/
     - assets/splash_screen/
+    - assets/images/bg_images/
 
 # --- Generator config: flutter_launcher_icons ---
 # Run: dart run flutter_launcher_icons

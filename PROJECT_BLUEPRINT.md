@@ -36,7 +36,7 @@ harvesthub/
 │   │   │   │   ├── splash_screen.dart
 │   │   │   │   └── animated_logo.dart
 │   │   │   ├── auth/
-│   │   │   │   ├── role_selection_screen.dart   # SRS 1.6: landing page accepts user role
+│   │   │   │   ├── role_selection_screen.dart  
 │   │   │   │   ├── login_screen.dart
 │   │   │   │   └── register_screen.dart         # customer registration form
 │   │   │   ├── customer/
