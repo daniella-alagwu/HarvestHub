@@ -55,6 +55,7 @@ flutter:
   - assets/images/products/
   - assets/splash_screen/
   - assets/images/bg_images/
+  - assets/images/google_logo.png
 
 flutter_launcher_icons:
   android: true
