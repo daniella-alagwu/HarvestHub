@@ -2,11 +2,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../data/models/user_role.dart';
 import '../../../data/repositories/auth_repository.dart';
+import '../../../data/static/location_data.dart';
 import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
 import '../../widgets/app_page_route.dart';
 import '../../widgets/app_text_field.dart';
+import '../../../data/static/country_code_picker.dart';
+import '../../../data/static/labeled_dropdown.dart';
 import '../home/home_screen.dart';
+import 'email_verification_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key, required this.role});
@@ -26,10 +30,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _email = TextEditingController();
   final _phone = TextEditingController();
   final _password = TextEditingController();
-  final _address = TextEditingController();
+  final _addressLine = TextEditingController();
+  final _stateManual = TextEditingController();
   final _businessName = TextEditingController();
   final _farmLocation = TextEditingController();
   final _authRepository = AuthRepository();
+
+  // Phone country code (dial code prefix).
+  CountryInfo _phoneCountry = LocationData.defaultCountry;
+
+  // Address country + dependent state/region.
+  CountryInfo _addressCountry = LocationData.defaultCountry;
+  String? _selectedState;
 
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
@@ -46,7 +58,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _email.dispose();
     _phone.dispose();
     _password.dispose();
-    _address.dispose();
+    _addressLine.dispose();
+    _stateManual.dispose();
     _businessName.dispose();
     _farmLocation.dispose();
     super.dispose();
@@ -63,6 +76,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  String get _fullPhoneNumber =>
+      '${_phoneCountry.dialCode}${_phone.text.trim()}';
+
+  String get _stateValue => _addressCountry.states.isNotEmpty
+      ? (_selectedState ?? '')
+      : _stateManual.text.trim();
+
+  String get _fullAddress =>
+      '${_addressLine.text.trim()}, $_stateValue, ${_addressCountry.name}';
+
+  void _onAddressCountryChanged(CountryInfo? country) {
+    if (country == null) return;
+    setState(() {
+      _addressCountry = country;
+      _selectedState = null;
+      _stateManual.clear();
+    });
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (!_agreedToTerms) {
@@ -76,7 +108,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         await _authRepository.registerFarmer(
           fullName: _fullName.text,
           email: _email.text,
-          phone: _phone.text,
+          phone: _fullPhoneNumber,
           password: _password.text,
           businessName: _businessName.text,
           marketLocation: _farmLocation.text,
@@ -85,14 +117,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
         await _authRepository.registerCustomer(
           fullName: _fullName.text,
           email: _email.text,
-          phone: _phone.text,
+          phone: _fullPhoneNumber,
           password: _password.text,
-          address: _address.text,
+          address: _fullAddress,
         );
       }
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
-        AppPageRoute(page: HomeScreen(role: _isFarmer ? 'farmer' : 'customer')),
+        AppPageRoute(
+          page: EmailVerificationScreen(
+            email: _email.text.trim(),
+            role: _isFarmer ? 'farmer' : 'customer',
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -122,6 +159,111 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Widget _phoneField() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Mobile Phone Number',
+            style:
+                AppTextStyles.bodyRegular.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CountryCodePicker(
+                selected: _phoneCountry,
+                onChanged: (country) => setState(() => _phoneCountry = country),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextFormField(
+                  controller: _phone,
+                  keyboardType: TextInputType.phone,
+                  style: AppTextStyles.bodyRegular,
+                  decoration: InputDecoration(
+                    hintText: '800 000 0000',
+                    hintStyle: AppTextStyles.bodyMuted,
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                          color: AppColors.mainGreen, width: 1.4),
+                    ),
+                  ),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Phone number is required'
+                      : null,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _addressSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppTextField(
+          label: 'Address',
+          hint: 'Street and city',
+          controller: _addressLine,
+          icon: Icons.home_outlined,
+          maxLines: 2,
+          validator: (v) =>
+              (v == null || v.trim().isEmpty) ? 'Address is required' : null,
+        ),
+        LabeledDropdown<CountryInfo>(
+          label: 'Country',
+          icon: Icons.public_outlined,
+          value: _addressCountry,
+          items: LocationData.countries,
+          itemLabel: (c) => '${c.flag}  ${c.name}',
+          onChanged: _onAddressCountryChanged,
+        ),
+        if (_addressCountry.states.isNotEmpty)
+          LabeledDropdown<String>(
+            label: 'State / Region',
+            icon: Icons.map_outlined,
+            value: _selectedState,
+            hint: 'Select a state',
+            items: _addressCountry.states,
+            itemLabel: (s) => s,
+            onChanged: (v) => setState(() => _selectedState = v),
+            validator: (v) =>
+                (v == null || v.isEmpty) ? 'State is required' : null,
+          )
+        else
+          AppTextField(
+            label: 'State / Region',
+            hint: 'Enter your state or region',
+            controller: _stateManual,
+            icon: Icons.map_outlined,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'State / Region is required'
+                : null,
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,7 +272,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 18),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: AppColors.textPrimary, size: 18),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
@@ -142,18 +285,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: _accentTint,
-                  child: Icon(
-                    _isFarmer ? Icons.agriculture_rounded : Icons.shopping_basket_outlined,
-                    color: _accent,
-                    size: 24,
-                  ),
-                ),
+              
                 const SizedBox(height: 16),
                 Text(
-                  _isFarmer ? 'Set up your farm profile' : 'Create your account',
+                  _isFarmer
+                      ? 'Set up your farm profile'
+                      : 'Create your account',
                   style: AppTextStyles.headingLarge.copyWith(fontSize: 25),
                 ),
                 const SizedBox(height: 6),
@@ -164,16 +301,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: AppTextStyles.bodyMuted,
                 ),
                 const SizedBox(height: 26),
-
                 AppTextField(
                   label: 'Full Name',
                   hint: _isFarmer ? 'e.g. Musa Ibrahim' : 'e.g. Amara Chukwu',
                   controller: _fullName,
                   icon: Icons.person_outline,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Please enter your name' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Please enter your name'
+                      : null,
                 ),
-
                 if (_isFarmer) ...[
                   AppTextField(
                     label: 'Farm / Business Name',
@@ -189,11 +325,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hint: 'Nearest farmers market or pickup area',
                     controller: _farmLocation,
                     icon: Icons.location_on_outlined,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Location is required' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Location is required'
+                        : null,
                   ),
                 ],
-
                 AppTextField(
                   label: 'Email Address',
                   hint: 'name@example.com',
@@ -201,33 +337,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   icon: Icons.mail_outline,
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Email is required';
+                    if (v == null || v.trim().isEmpty)
+                      return 'Email is required';
                     if (!v.contains('@')) return 'Enter a valid email address';
                     return null;
                   },
                 ),
-
-                AppTextField(
-                  label: 'Mobile Phone Number',
-                  hint: '+234 800 000 0000',
-                  controller: _phone,
-                  icon: Icons.phone_outlined,
-                  keyboardType: TextInputType.phone,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Phone number is required' : null,
-                ),
-
-                if (!_isFarmer)
-                  AppTextField(
-                    label: 'Address',
-                    hint: 'Street, city, state',
-                    controller: _address,
-                    icon: Icons.home_outlined,
-                    maxLines: 2,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Address is required' : null,
-                  ),
-
+                _phoneField(),
+                if (!_isFarmer) _addressSection(),
                 AppTextField(
                   label: 'Password',
                   hint: 'At least 8 characters',
@@ -236,11 +353,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: _obscurePassword,
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: AppColors.textSecondary,
                       size: 20,
                     ),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Password is required';
@@ -248,14 +368,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Checkbox(
                       value: _agreedToTerms,
                       activeColor: AppColors.wheatGold,
-                      onChanged: (v) => setState(() => _agreedToTerms = v ?? false),
+                      onChanged: (v) =>
+                          setState(() => _agreedToTerms = v ?? false),
                     ),
                     Expanded(
                       child: Padding(
@@ -269,7 +389,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -277,7 +396,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       backgroundColor: _accent,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
                     onPressed: _isSubmitting ? null : _submit,
@@ -285,15 +405,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
                           )
                         : Text(
-                            _isFarmer ? 'Create Farmer Account' : 'Create Account',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                            _isFarmer
+                                ? 'Create Farmer Account'
+                                : 'Create Account',
+                            style: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w600),
                           ),
                   ),
                 ),
-
                 if (!_isFarmer) ...[
                   const SizedBox(height: 20),
                   Row(
@@ -313,7 +436,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: AppColors.border),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: _isSubmitting ? null : _continueWithGoogle,
                       child: Row(
@@ -325,7 +449,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.textSecondary, width: 1),
+                              border: Border.all(
+                                  color: AppColors.textSecondary, width: 1),
                             ),
                             child: Text(
                               'G',
@@ -339,14 +464,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           const SizedBox(width: 10),
                           Text(
                             'Continue with Google',
-                            style: AppTextStyles.bodyRegular.copyWith(fontWeight: FontWeight.w600),
+                            style: AppTextStyles.bodyRegular
+                                .copyWith(fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
                     ),
                   ),
                 ],
-
                 const SizedBox(height: 24),
               ],
             ),
