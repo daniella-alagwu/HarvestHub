@@ -43,7 +43,7 @@ class HarvestHubApp extends StatelessWidget {
       title: 'HarvestHub',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      // home: const AiAssistantScreen(),
+      home: const AiAssistantScreen(),
       initialRoute: SplashScreen.routeName,
       routes: {
         SplashScreen.routeName: (context) => const SplashScreen(),

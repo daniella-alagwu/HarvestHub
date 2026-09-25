@@ -23,7 +23,6 @@ dependencies:
   firebase_storage: ^13.6.0
   google_sign_in: ^7.2.0
 
-
   # State management
   provider: ^6.1.2
 
@@ -48,13 +47,15 @@ flutter:
 
   # Assets
   assets:
-  - .env
-  - assets/icons/
-  - assets/icons/app_icon/
-  - assets/images/
-  - assets/images/products/
-  - assets/splash_screen/
-  - assets/images/bg_images/
+    - .env
+    - assets/icons/
+    - assets/icons/app_icon/
+    - assets/images/
+    - assets/images/products/
+    - assets/splash_screen/
+    - assets/images/bg_images/
+    - assets/images/mascot/
+  # - assets/images/splash_screen
 
 flutter_launcher_icons:
   android: true
