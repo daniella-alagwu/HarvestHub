@@ -23,8 +23,9 @@ Future<void> main() async {
 
 //skip for if firebase not yet config'd
   try {
+   
     await Firebase.initializeApp(
-      // options: DefaultFirebaseOptions.currentPlatform, 
+      options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
     debugPrint('Firebase not configured yet: $e');
