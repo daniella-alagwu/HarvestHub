@@ -1,8 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../data/models/user_role.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
+import '../../widgets/app_page_route.dart';
 import '../../widgets/app_text_field.dart';
+import '../home/home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key, required this.role});
@@ -25,6 +29,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _address = TextEditingController();
   final _businessName = TextEditingController();
   final _farmLocation = TextEditingController();
+  final _authRepository = AuthRepository();
 
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
@@ -66,12 +71,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     setState(() => _isSubmitting = true);
-    // TODO: wire to AuthRepository.registerCustomer(...) /
-    // .registerFarmer(...) once Firebase Auth + Firestore are connected.
-    await Future.delayed(const Duration(milliseconds: 700));
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
-    _showSnack('Account created — demo only, not saved yet.', success: true);
+    try {
+      if (_isFarmer) {
+        await _authRepository.registerFarmer(
+          fullName: _fullName.text,
+          email: _email.text,
+          phone: _phone.text,
+          password: _password.text,
+          businessName: _businessName.text,
+          marketLocation: _farmLocation.text,
+        );
+      } else {
+        await _authRepository.registerCustomer(
+          fullName: _fullName.text,
+          email: _email.text,
+          phone: _phone.text,
+          password: _password.text,
+          address: _address.text,
+        );
+      }
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        AppPageRoute(page: HomeScreen(role: _isFarmer ? 'farmer' : 'customer')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack(_authRepository.messageForError(e), success: false);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _continueWithGoogle() async {
+    setState(() => _isSubmitting = true);
+    try {
+      final role = await _authRepository.signInWithGoogle();
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        AppPageRoute(page: HomeScreen(role: role)),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'google-sign-in-cancelled') return;
+      if (!mounted) return;
+      _showSnack(_authRepository.messageForError(e), success: false);
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack(_authRepository.messageForError(e), success: false);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -201,8 +249,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
 
-                // Autumn-accented terms checkbox — a small, deliberate
-                // wheat-gold touch outside the green/rust role theming.
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -248,9 +294,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
 
-                // Google sign-up — customer flow only. A farmer account
-                // needs business details a one-tap OAuth flow can't
-                // capture, so it stays off that branch.
                 if (!_isFarmer) ...[
                   const SizedBox(height: 20),
                   Row(
@@ -272,11 +315,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      onPressed: () {
-                        // TODO: wire to Google Sign-In once Firebase Auth
-                        // is connected. Frontend placeholder only.
-                        debugPrint('Continue with Google tapped (frontend only).');
-                      },
+                      onPressed: _isSubmitting ? null : _continueWithGoogle,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

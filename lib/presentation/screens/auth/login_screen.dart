@@ -1,8 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
 import '../../widgets/app_page_route.dart';
 import '../../widgets/app_text_field.dart';
+import '../home/home_screen.dart';
 import 'role_selection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
+  final _authRepository = AuthRepository();
 
   bool _obscurePassword = true;
   bool _isSubmitting = false;
@@ -44,13 +48,41 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
-    // TODO: wire to AuthRepository.login(...) once Firebase Auth is
-    // connected. Route to the right dashboard based on the authenticated
-    // user's Role field (customer/farmer/admin).
-    await Future.delayed(const Duration(milliseconds: 700));
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
-    _showSnack('Login demo only — nothing wired to Firebase yet.', success: true);
+    try {
+      final role = await _authRepository.login(
+        email: _email.text,
+        password: _password.text,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        AppPageRoute(page: HomeScreen(role: role)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack(_authRepository.messageForError(e), success: false);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _continueWithGoogle() async {
+    setState(() => _isSubmitting = true);
+    try {
+      final role = await _authRepository.signInWithGoogle();
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        AppPageRoute(page: HomeScreen(role: role)),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'google-sign-in-cancelled') return;
+      if (!mounted) return;
+      _showSnack(_authRepository.messageForError(e), success: false);
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack(_authRepository.messageForError(e), success: false);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -119,7 +151,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      // TODO: forgot-password flow.
                       debugPrint('Forgot password tapped.');
                     },
                     child: Text(
@@ -174,11 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: () {
-                      // TODO: wire to Google Sign-In once Firebase Auth
-                      // is connected. Frontend placeholder only.
-                      debugPrint('Continue with Google tapped (frontend only).');
-                    },
+                    onPressed: _isSubmitting ? null : _continueWithGoogle,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

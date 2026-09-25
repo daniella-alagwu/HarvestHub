@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+import 'firebase_options.dart'; 
+
 import 'data/models/user_role.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/screens/splash/splash_screen.dart';
@@ -13,8 +15,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
+   
     await Firebase.initializeApp(
-      // options: DefaultFirebaseOptions.currentPlatform, /
+      options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
     debugPrint('Firebase not configured yet: $e');

@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "163277294153",
+    "project_id": "harvest-hub-d7d24",
+    "storage_bucket": "harvest-hub-d7d24.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:163277294153:android:e833257db2892762214d98",
+        "android_client_info": {
+          "package_name": "com.example.harvesthub"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "163277294153-d0dr4olou02jmer48d5aedfn186h5n4q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5fB2yOAJK2romS9xGCPrNiDIgwKtstmc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "163277294153-d0dr4olou02jmer48d5aedfn186h5n4q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "163277294153-hamk1u7vahvhianpv559e0ivo3p3t72m.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.harvesthub"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
