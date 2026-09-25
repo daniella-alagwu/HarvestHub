@@ -17,14 +17,14 @@ class AppColors {
                            // AUTUMN ACCENTS
   
 
-  /// Highlight text, secondary buttons, and maybe banners
-  static const Color autumnRust = Color(0xFFD97736);
+/// Highlight text, secondary buttons, and banners (Rich Burnt Orange / Terracotta)
+  static const Color autumnRust = Color(0xFFC85A2A);
 
-  /// Ratings (stars), "New" badges, AI Assistant chat bubbles.
-  static const Color wheatGold = Color(0xFFECA12A);
+  /// Ratings (stars), "New" badges, AI Assistant chat bubbles (Warm Harvest / Amber Gold)
+  static const Color wheatGold = Color(0xFFE08D2A);
 
-  /// Subtle borders, category cards for root veggies/grains.
-  static const Color earthySoil = Color(0xFF6B4423);
+  /// Subtle borders, category cards for root veggies/grains (Deep Warm Soil Brown)
+  static const Color earthySoil = Color(0xFF5A3825);
 
 
                   

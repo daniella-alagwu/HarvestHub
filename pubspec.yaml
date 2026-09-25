@@ -30,6 +30,7 @@ dependencies:
   # Networking & AI Integration
   http: ^1.2.2
   google_generative_ai: ^0.4.6
+  flutter_dotenv: ^5.2.1
 
   # Notifications
   flutter_local_notifications: ^17.2.3
@@ -39,14 +40,13 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^4.0.0
 
-  # see LAUNCHER_ICON_SETUP.md for the exact commands and config below.
   flutter_launcher_icons: ^0.14.1
   flutter_native_splash: ^2.4.1
 
 flutter:
   uses-material-design: true
 
-  # Asset declarations
+  # Assets
   assets:
   - .env
   - assets/icons/
@@ -56,8 +56,6 @@ flutter:
   - assets/splash_screen/
   - assets/images/bg_images/
 
-# --- Generator config: flutter_launcher_icons ---
-# Run: dart run flutter_launcher_icons
 flutter_launcher_icons:
   android: true
   ios: true
@@ -67,8 +65,6 @@ flutter_launcher_icons:
   min_sdk_android: 21
   remove_alpha_ios: true
 
-# --- Generator config: flutter_native_splash ---
-# Run: dart run flutter_native_splash:create
 flutter_native_splash:
   color: "#F9FAFB"
   image: "assets/splash_screen/logo_full_combined.png"
