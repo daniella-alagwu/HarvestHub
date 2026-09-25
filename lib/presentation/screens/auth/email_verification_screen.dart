@@ -161,6 +161,23 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                 'automatically, or you can tap Continue.',
                 style: AppTextStyles.bodyMuted,
               ),
+              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline,
+                      color: AppColors.textSecondary, size: 16),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Can\'t find the email? Check your spam or junk '
+                      'folder, or wait a couple of minutes and try '
+                      'resending.',
+                      style: AppTextStyles.bodyMuted.copyWith(fontSize: 12.5),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 28),
               SizedBox(
                 width: double.infinity,
