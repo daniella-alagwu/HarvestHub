@@ -43,15 +43,15 @@ class HarvestHubApp extends StatelessWidget {
       title: 'HarvestHub',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      // home: const AiAssistantScreen(),
-      initialRoute: SplashScreen.routeName,
-      routes: {
-        SplashScreen.routeName: (context) => const SplashScreen(),
-        WelcomeScreen.routeName: (context) => const WelcomeScreen(),
-        RoleSelectionScreen.routeName: (context) => const RoleSelectionScreen(),
-        LoginScreen.routeName: (context) => const LoginScreen(),
-        // AiAssistantScreen.routeName: (context) => const AiAssistantScreen(),
-      },
+      home: const AiAssistantScreen(),
+      // initialRoute: SplashScreen.routeName,
+      // routes: {
+      //   SplashScreen.routeName: (context) => const SplashScreen(),
+      //   WelcomeScreen.routeName: (context) => const WelcomeScreen(),
+      //   RoleSelectionScreen.routeName: (context) => const RoleSelectionScreen(),
+      //   LoginScreen.routeName: (context) => const LoginScreen(),
+      //   // AiAssistantScreen.routeName: (context) => const AiAssistantScreen(),
+      // },
       onGenerateRoute: (settings) {
         if (settings.name == RegisterScreen.routeName) {
           final role = settings.arguments as UserRole? ?? UserRole.customer;
