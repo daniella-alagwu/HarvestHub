@@ -1,0 +1,28 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "harvest-hub-d7d24",
+          "appId": "1:163277294153:android:e833257db2892762214d98",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "harvest-hub-d7d24",
+          "configurations": {
+            "android": "1:163277294153:android:e833257db2892762214d98",
+            "ios": "1:163277294153:ios:21d098a81b35ce3b214d98",
+            "macos": "1:163277294153:ios:21d098a81b35ce3b214d98",
+            "web": "1:163277294153:web:9182fbe9458b05c1214d98",
+            "windows": "1:163277294153:web:ee1a0e606f8cb60f214d98"
+          }
+        }
+      }
+    }
+  }
+}
