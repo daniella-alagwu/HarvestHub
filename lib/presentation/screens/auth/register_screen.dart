@@ -9,6 +9,7 @@ import '../../widgets/app_page_route.dart';
 import '../../widgets/app_text_field.dart';
 import '../../../data/static/country_code_picker.dart';
 import '../../../data/static/labeled_dropdown.dart';
+import '../../../data/static/searchable_dropdown.dart';
 import '../home/home_screen.dart';
 import 'email_verification_screen.dart';
 
@@ -30,16 +31,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _email = TextEditingController();
   final _phone = TextEditingController();
   final _password = TextEditingController();
-  final _addressLine = TextEditingController();
   final _stateManual = TextEditingController();
   final _businessName = TextEditingController();
   final _farmLocation = TextEditingController();
   final _authRepository = AuthRepository();
 
-  // Phone country code (dial code prefix).
   CountryInfo _phoneCountry = LocationData.defaultCountry;
 
-  // Address country + dependent state/region.
   CountryInfo _addressCountry = LocationData.defaultCountry;
   String? _selectedState;
 
@@ -58,7 +56,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _email.dispose();
     _phone.dispose();
     _password.dispose();
-    _addressLine.dispose();
     _stateManual.dispose();
     _businessName.dispose();
     _farmLocation.dispose();
@@ -83,8 +80,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ? (_selectedState ?? '')
       : _stateManual.text.trim();
 
-  String get _fullAddress =>
-      '${_addressLine.text.trim()}, $_stateValue, ${_addressCountry.name}';
+  String get _fullAddress => '$_stateValue, ${_addressCountry.name}';
 
   void _onAddressCountryChanged(CountryInfo? country) {
     if (country == null) return;
@@ -142,11 +138,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _continueWithGoogle() async {
     setState(() => _isSubmitting = true);
     try {
-      final role = await _authRepository.signInWithGoogle();
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        AppPageRoute(page: HomeScreen(role: role)),
+      final role = await _authRepository.signInWithGoogle(
+        intendedRole: _isFarmer ? 'farmer' : 'customer',
       );
+      if (!mounted) return;
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null && !user.emailVerified) {
+        Navigator.of(context).pushReplacement(
+          AppPageRoute(
+            page: EmailVerificationScreen(email: user.email ?? '', role: role),
+          ),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          AppPageRoute(page: HomeScreen(role: role)),
+        );
+      }
     } on FirebaseAuthException catch (e) {
       if (e.code == 'google-sign-in-cancelled') return;
       if (!mounted) return;
@@ -221,21 +228,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppTextField(
-          label: 'Address',
-          hint: 'Street and city',
-          controller: _addressLine,
-          icon: Icons.home_outlined,
-          maxLines: 2,
-          validator: (v) =>
-              (v == null || v.trim().isEmpty) ? 'Address is required' : null,
-        ),
-        LabeledDropdown<CountryInfo>(
+        SearchableDropdown<CountryInfo>(
           label: 'Country',
           icon: Icons.public_outlined,
           value: _addressCountry,
           items: LocationData.countries,
           itemLabel: (c) => '${c.flag}  ${c.name}',
+          searchHint: 'Search countries',
           onChanged: _onAddressCountryChanged,
         ),
         if (_addressCountry.states.isNotEmpty)

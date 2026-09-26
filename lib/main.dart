@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'firebase_options.dart'; 
+import 'firebase_options.dart';
 import 'data/models/user_role.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/screens/splash/splash_screen.dart';
+import 'presentation/widgets/auth_gate.dart';
 import 'presentation/screens/welcome/welcome_screen.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/role_selection_screen.dart';
@@ -14,7 +15,6 @@ import 'presentation/screens/customer/assistant/ai_assistant_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-
   try {
     await dotenv.load(fileName: '.env');
   } catch (e) {
@@ -23,7 +23,6 @@ Future<void> main() async {
 
 //skip for if firebase not yet config'd
   try {
-   
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -43,8 +42,7 @@ class HarvestHubApp extends StatelessWidget {
       title: 'HarvestHub',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      home: const AiAssistantScreen(),
-      initialRoute: SplashScreen.routeName,
+      home: const AuthGate(),
       routes: {
         SplashScreen.routeName: (context) => const SplashScreen(),
         WelcomeScreen.routeName: (context) => const WelcomeScreen(),
