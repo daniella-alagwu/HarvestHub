@@ -1,40 +1,29 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AiAssistantService {
   AiAssistantService._internal();
   static final AiAssistantService instance = AiAssistantService._internal();
 
-  static const modelName = 'gemini-3.1-flash-lite';
+  static const _modelName = 'gemini-3.1-flash-lite';
+  static const _endpoint =
+      'https://generativelanguage.googleapis.com/v1beta/models/$_modelName:generateContent';
 
-  static const systemInstruction = '''
-You are the HarvestHub Farm Products Assistant, built into a local-produce
-marketplace app. Answer only questions about fruits, vegetables, grains,
-dairy, herbs, and other farm products: nutrition, seasonality, storage,
-freshness, and simple recipe/pairing ideas. Keep answers short (2-4
-sentences), friendly, and practical — this is a mobile chat bubble, not an
-article. If asked about a farmer's live stock, pickup times, or order
-status, say plainly that you can't check live data yet. If asked something
-unrelated to farm products or this app, politely redirect to what you can
-help with instead of answering it.
+  static const _systemInstruction = '''
+You are Flora, the HarvestHub Farm Products Assistant, built into a
+local-produce marketplace app. Answer questions about fruits, vegetables,
+grains, dairy, herbs, and other farm products: nutrition, seasonality,
+storage, freshness, and simple recipe/pairing ideas. Keep answers short
+(2-4 sentences), warm, and practical — this is a mobile chat bubble, not
+an article. If asked about a specific farmer's live stock, pickup times,
+or order status, say plainly that you can't check live data yet. If asked
+something unrelated to farm products or this app, gently redirect to what
+you can help with instead of answering it.
 ''';
 
-  GenerativeModel? model;
-    
-  GenerativeModel? resolveModel() {
-    if (model != null) return model;
-    final apiKey = dotenv.env['GEMINI_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) return null;
-    model = GenerativeModel(
-      model: modelName,
-      apiKey: apiKey,
-      systemInstruction: Content.system(systemInstruction),
-    );
-    return model;
-  }
 
- 
   static const List<String> suggestedQuestions = [
     'Which fruits are rich in Vitamin C?',
     'How should tomatoes be stored?',
@@ -44,26 +33,74 @@ help with instead of answering it.
   ];
 
   Future<String> ask(String question) async {
-    final model = resolveModel();
+    final apiKey = dotenv.env['GEMINI_API_KEY'];
 
-    if (model == null) {
-      return predefinedAnswer(question);
+    if (apiKey == null || apiKey.isEmpty) {
+ 
+      debugPrint(
+        'AiAssistantService: GEMINI_API_KEY is missing/empty in .env — '
+        'serving a predefined answer instead of calling Gemini. '
+        'See AI_ASSISTANT_SETUP.md §2-3.',
+      );
+      return _predefinedAnswer(question);
     }
 
     try {
-      final response = await model.generateContent([Content.text(question)]);
-      final text = response.text?.trim();
-      if (text == null || text.isEmpty) {
-        return predefinedAnswer(question);
+      final uri = Uri.parse('$_endpoint?key=$apiKey');
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'system_instruction': {
+            'parts': [
+              {'text': _systemInstruction},
+            ],
+          },
+          'contents': [
+            {
+              'parts': [
+                {'text': question},
+              ],
+            },
+          ],
+        }),
+      );
+
+      if (response.statusCode != 200) {
+       
+        debugPrint(
+          'AiAssistantService: Gemini returned ${response.statusCode}: '
+          '${response.body}',
+        );
+        return _predefinedAnswer(question);
       }
-      return text;
+
+      final text = _extractText(jsonDecode(response.body));
+      if (text == null || text.trim().isEmpty) {
+        debugPrint('AiAssistantService: empty Gemini response body: ${response.body}');
+        return _predefinedAnswer(question);
+      }
+      return text.trim();
     } catch (e) {
-      debugPrint('AI-AssistantService: Gemini call failed ($e) — falling back.');
-      return predefinedAnswer(question);
+      debugPrint('AiAssistantService: request failed ($e) — falling back.');
+      return _predefinedAnswer(question);
     }
   }
 
-  String predefinedAnswer(String question) {
+  String? _extractText(Map<String, dynamic> data) {
+    try {
+      final candidates = data['candidates'] as List?;
+      if (candidates == null || candidates.isEmpty) return null;
+      final parts = candidates[0]['content']?['parts'] as List?;
+      if (parts == null || parts.isEmpty) return null;
+      return parts.map((p) => (p['text'] as String?) ?? '').join();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  
+  String _predefinedAnswer(String question) {
     final q = question.toLowerCase();
 
     if (q.contains('vitamin c')) {

@@ -6,6 +6,8 @@ import '../../theme/text_styles.dart';
 import '../../widgets/app_page_route.dart';
 import '../../widgets/app_text_field.dart';
 import '../home/home_screen.dart';
+import 'email_verification_screen.dart';
+import 'forgot_password_screen.dart';
 import 'role_selection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -44,6 +46,21 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  void _routeAfterAuth(String role, {required String email}) {
+    final verified = FirebaseAuth.instance.currentUser?.emailVerified ?? true;
+    if (verified) {
+      Navigator.of(context).pushReplacement(
+        AppPageRoute(page: HomeScreen(role: role)),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        AppPageRoute(
+          page: EmailVerificationScreen(email: email, role: role),
+        ),
+      );
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -54,9 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _password.text,
       );
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        AppPageRoute(page: HomeScreen(role: role)),
-      );
+      _routeAfterAuth(role, email: _email.text.trim());
     } catch (e) {
       if (!mounted) return;
       _showSnack(_authRepository.messageForError(e), success: false);
@@ -70,8 +85,9 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final role = await _authRepository.signInWithGoogle();
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        AppPageRoute(page: HomeScreen(role: role)),
+      _routeAfterAuth(
+        role,
+        email: FirebaseAuth.instance.currentUser?.email ?? '',
       );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'google-sign-in-cancelled') return;
@@ -105,11 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: AppColors.softGreen,
-                  child: const Icon(Icons.eco_outlined, color: AppColors.mainGreen, size: 24),
-                ),
+      
                 const SizedBox(height: 16),
                 Text('Welcome back', style: AppTextStyles.headingLarge.copyWith(fontSize: 25)),
                 const SizedBox(height: 6),
@@ -151,7 +163,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      debugPrint('Forgot password tapped.');
+                      Navigator.of(context).push(
+                        AppPageRoute(page: const ForgotPasswordScreen()),
+                      );
                     },
                     child: Text(
                       'Forgot password?',
