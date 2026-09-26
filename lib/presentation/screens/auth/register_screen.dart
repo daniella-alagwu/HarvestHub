@@ -7,6 +7,8 @@ import '../../theme/text_styles.dart';
 import '../../widgets/app_page_route.dart';
 import '../../widgets/app_text_field.dart';
 import '../home/home_screen.dart';
+import '../admin/admin_dashboard_screen.dart';
+import '../admin/super_admin_dashboard_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key, required this.role});
@@ -107,8 +109,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       final role = await _authRepository.signInWithGoogle();
       if (!mounted) return;
+      final destination = role == UserRole.superAdmin
+          ? const SuperAdminDashboardScreen()
+          : role == UserRole.admin
+              ? const AdminDashboardScreen()
+              : HomeScreen(
+                  role: role == UserRole.farmer ? 'farmer' : 'customer');
       Navigator.of(context).pushReplacement(
-        AppPageRoute(page: HomeScreen(role: role)),
+        AppPageRoute(page: destination),
       );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'google-sign-in-cancelled') return;
@@ -130,7 +138,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 18),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: AppColors.textPrimary, size: 18),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
@@ -146,14 +155,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   radius: 26,
                   backgroundColor: _accentTint,
                   child: Icon(
-                    _isFarmer ? Icons.agriculture_rounded : Icons.shopping_basket_outlined,
+                    _isFarmer
+                        ? Icons.agriculture_rounded
+                        : Icons.shopping_basket_outlined,
                     color: _accent,
                     size: 24,
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  _isFarmer ? 'Set up your farm profile' : 'Create your account',
+                  _isFarmer
+                      ? 'Set up your farm profile'
+                      : 'Create your account',
                   style: AppTextStyles.headingLarge.copyWith(fontSize: 25),
                 ),
                 const SizedBox(height: 6),
@@ -164,16 +177,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: AppTextStyles.bodyMuted,
                 ),
                 const SizedBox(height: 26),
-
                 AppTextField(
                   label: 'Full Name',
                   hint: _isFarmer ? 'e.g. Musa Ibrahim' : 'e.g. Amara Chukwu',
                   controller: _fullName,
                   icon: Icons.person_outline,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Please enter your name' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Please enter your name'
+                      : null,
                 ),
-
                 if (_isFarmer) ...[
                   AppTextField(
                     label: 'Farm / Business Name',
@@ -189,11 +201,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hint: 'Nearest farmers market or pickup area',
                     controller: _farmLocation,
                     icon: Icons.location_on_outlined,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Location is required' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Location is required'
+                        : null,
                   ),
                 ],
-
                 AppTextField(
                   label: 'Email Address',
                   hint: 'name@example.com',
@@ -201,22 +213,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   icon: Icons.mail_outline,
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Email is required';
+                    if (v == null || v.trim().isEmpty)
+                      return 'Email is required';
                     if (!v.contains('@')) return 'Enter a valid email address';
                     return null;
                   },
                 ),
-
                 AppTextField(
                   label: 'Mobile Phone Number',
                   hint: '+234 800 000 0000',
                   controller: _phone,
                   icon: Icons.phone_outlined,
                   keyboardType: TextInputType.phone,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Phone number is required' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Phone number is required'
+                      : null,
                 ),
-
                 if (!_isFarmer)
                   AppTextField(
                     label: 'Address',
@@ -224,10 +236,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _address,
                     icon: Icons.home_outlined,
                     maxLines: 2,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Address is required' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Address is required'
+                        : null,
                   ),
-
                 AppTextField(
                   label: 'Password',
                   hint: 'At least 8 characters',
@@ -236,11 +248,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: _obscurePassword,
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                       color: AppColors.textSecondary,
                       size: 20,
                     ),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Password is required';
@@ -248,14 +263,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Checkbox(
                       value: _agreedToTerms,
                       activeColor: AppColors.wheatGold,
-                      onChanged: (v) => setState(() => _agreedToTerms = v ?? false),
+                      onChanged: (v) =>
+                          setState(() => _agreedToTerms = v ?? false),
                     ),
                     Expanded(
                       child: Padding(
@@ -269,7 +284,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -277,7 +291,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       backgroundColor: _accent,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
                     onPressed: _isSubmitting ? null : _submit,
@@ -285,15 +300,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
                           )
                         : Text(
-                            _isFarmer ? 'Create Farmer Account' : 'Create Account',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                            _isFarmer
+                                ? 'Create Farmer Account'
+                                : 'Create Account',
+                            style: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w600),
                           ),
                   ),
                 ),
-
                 if (!_isFarmer) ...[
                   const SizedBox(height: 20),
                   Row(
@@ -313,7 +331,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: AppColors.border),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: _isSubmitting ? null : _continueWithGoogle,
                       child: Row(
@@ -325,7 +344,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.textSecondary, width: 1),
+                              border: Border.all(
+                                  color: AppColors.textSecondary, width: 1),
                             ),
                             child: Text(
                               'G',
@@ -339,14 +359,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           const SizedBox(width: 10),
                           Text(
                             'Continue with Google',
-                            style: AppTextStyles.bodyRegular.copyWith(fontWeight: FontWeight.w600),
+                            style: AppTextStyles.bodyRegular
+                                .copyWith(fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
                     ),
                   ),
                 ],
-
                 const SizedBox(height: 24),
               ],
             ),

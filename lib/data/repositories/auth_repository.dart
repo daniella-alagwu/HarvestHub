@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../models/user_role.dart';
 
 class AuthRepository {
   AuthRepository({
@@ -23,7 +24,7 @@ class AuthRepository {
     _googleSignInReady = true;
   }
 
-  Future<String> login({
+  Future<UserRole> login({
     required String email,
     required String password,
   }) async {
@@ -42,7 +43,7 @@ class AuthRepository {
       );
     }
 
-    return (doc.data()?['role'] as String?) ?? 'customer';
+    return userRoleFromStorage(doc.data()?['role'] as String?);
   }
 
   Future<void> registerCustomer({
@@ -101,7 +102,7 @@ class AuthRepository {
     });
   }
 
-  Future<String> signInWithGoogle() async {
+  Future<UserRole> signInWithGoogle() async {
     await _ensureGoogleSignInReady();
 
     final GoogleSignInAccount googleUser;
@@ -126,7 +127,7 @@ class AuthRepository {
     final doc = await _firestore.collection('users').doc(uid).get();
 
     if (doc.exists) {
-      return (doc.data()?['role'] as String?) ?? 'customer';
+      return userRoleFromStorage(doc.data()?['role'] as String?);
     }
 
     await _firestore.collection('users').doc(uid).set({
@@ -135,7 +136,7 @@ class AuthRepository {
       'role': 'customer',
       'created_at': FieldValue.serverTimestamp(),
     });
-    return 'customer';
+    return UserRole.customer;
   }
 
   Future<void> signOut() async {

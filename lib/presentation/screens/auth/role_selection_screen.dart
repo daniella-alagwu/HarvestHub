@@ -18,10 +18,17 @@ class RoleSelectionScreen extends StatefulWidget {
 class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   UserRole _selectedRole = UserRole.customer;
 
-  Color get _accent =>
-      _selectedRole == UserRole.customer ? AppColors.mainGreen : AppColors.autumnRust;
+  Color get _accent {
+    if (_selectedRole == UserRole.customer) return AppColors.mainGreen;
+    if (_selectedRole == UserRole.farmer) return AppColors.autumnRust;
+    return AppColors.deepGreen;
+  }
 
   void _continue() {
+    if (_selectedRole == UserRole.admin) {
+      Navigator.of(context).push(AppPageRoute(page: const LoginScreen()));
+      return;
+    }
     Navigator.of(context).push(
       AppPageRoute(page: RegisterScreen(role: _selectedRole)),
     );
@@ -35,7 +42,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 18),
+          icon: const Icon(Icons.arrow_back_ios_new,
+              color: AppColors.textPrimary, size: 18),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
@@ -64,38 +72,50 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 style: AppTextStyles.bodyMuted,
               ),
               const SizedBox(height: 28),
-
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: _RoleTile(
                       title: 'Customer',
-                      description: 'Browse and order fresh produce from local farmers.',
+                      description:
+                          'Browse and order fresh produce from local farmers.',
                       icon: Icons.shopping_basket_outlined,
                       accentColor: AppColors.mainGreen,
                       accentTint: AppColors.softGreen,
                       isSelected: _selectedRole == UserRole.customer,
-                      onTap: () => setState(() => _selectedRole = UserRole.customer),
+                      onTap: () =>
+                          setState(() => _selectedRole = UserRole.customer),
                     ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: _RoleTile(
                       title: 'Farmer',
-                      description: 'List your harvest and manage orders and stock.',
+                      description:
+                          'List your harvest and manage orders and stock.',
                       icon: Icons.agriculture_rounded,
                       accentColor: AppColors.autumnRust,
                       accentTint: AppColors.autumnRust.withOpacity(0.10),
                       isSelected: _selectedRole == UserRole.farmer,
-                      onTap: () => setState(() => _selectedRole = UserRole.farmer),
+                      onTap: () =>
+                          setState(() => _selectedRole = UserRole.farmer),
                     ),
                   ),
                 ],
               ),
-
+              const SizedBox(height: 14),
+              _RoleTile(
+                title: 'Administrator',
+                description:
+                    'Manage the marketplace using preconfigured access.',
+                icon: Icons.admin_panel_settings_outlined,
+                accentColor: AppColors.deepGreen,
+                accentTint: AppColors.deepGreen.withOpacity(0.10),
+                isSelected: _selectedRole == UserRole.admin,
+                onTap: () => setState(() => _selectedRole = UserRole.admin),
+              ),
               const Spacer(),
-
               SizedBox(
                 width: double.infinity,
                 child: AnimatedContainer(
@@ -115,8 +135,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Continue as ${_selectedRole == UserRole.customer ? "Customer" : "Farmer"}',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                          'Continue as ${_selectedRole == UserRole.customer ? "Customer" : _selectedRole == UserRole.farmer ? "Farmer" : "Administrator"}',
+                          style: const TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(width: 8),
                         const Icon(Icons.arrow_forward_rounded, size: 18),
@@ -126,11 +147,11 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-
               Center(
                 child: TextButton(
                   onPressed: () {
-                    Navigator.of(context).push(AppPageRoute(page: const LoginScreen()));
+                    Navigator.of(context)
+                        .push(AppPageRoute(page: const LoginScreen()));
                   },
                   child: RichText(
                     text: TextSpan(
@@ -218,7 +239,8 @@ class _RoleTile extends StatelessWidget {
                 if (isSelected)
                   Icon(Icons.check_circle_rounded, color: accentColor, size: 20)
                 else
-                  Icon(Icons.radio_button_unchecked, color: AppColors.border, size: 20),
+                  Icon(Icons.radio_button_unchecked,
+                      color: AppColors.border, size: 20),
               ],
             ),
             const SizedBox(height: 14),
@@ -233,7 +255,8 @@ class _RoleTile extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               description,
-              style: AppTextStyles.bodyMuted.copyWith(fontSize: 12.5, height: 1.3),
+              style:
+                  AppTextStyles.bodyMuted.copyWith(fontSize: 12.5, height: 1.3),
             ),
           ],
         ),

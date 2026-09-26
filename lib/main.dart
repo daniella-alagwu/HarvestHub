@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'firebase_options.dart'; 
+import 'firebase_options.dart';
 import 'data/models/user_role.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/screens/splash/splash_screen.dart';
@@ -9,11 +9,11 @@ import 'presentation/screens/welcome/welcome_screen.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/role_selection_screen.dart';
 import 'presentation/screens/auth/register_screen.dart';
-import 'presentation/screens/customer/assistant/ai_assistant_screen.dart';
+import 'presentation/screens/admin/admin_dashboard_screen.dart';
+import 'presentation/screens/admin/super_admin_dashboard_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
 
   try {
     await dotenv.load(fileName: '.env');
@@ -23,7 +23,6 @@ Future<void> main() async {
 
 //skip for if firebase not yet config'd
   try {
-   
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -50,6 +49,10 @@ class HarvestHubApp extends StatelessWidget {
         WelcomeScreen.routeName: (context) => const WelcomeScreen(),
         RoleSelectionScreen.routeName: (context) => const RoleSelectionScreen(),
         LoginScreen.routeName: (context) => const LoginScreen(),
+        AdminDashboardScreen.routeName: (context) =>
+            const AdminDashboardScreen(),
+        SuperAdminDashboardScreen.routeName: (context) =>
+            const SuperAdminDashboardScreen(),
         // AiAssistantScreen.routeName: (context) => const AiAssistantScreen(),
       },
       onGenerateRoute: (settings) {
