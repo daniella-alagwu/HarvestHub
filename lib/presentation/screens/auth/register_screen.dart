@@ -11,6 +11,7 @@ import '../../../data/static/country_code_picker.dart';
 import '../../../data/static/labeled_dropdown.dart';
 import '../home/home_screen.dart';
 import 'email_verification_screen.dart';
+import '../customer/shell/customer_shell.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key, required this.role});
@@ -145,7 +146,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final role = await _authRepository.signInWithGoogle();
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
-        AppPageRoute(page: HomeScreen(role: role)),
+        role == 'customer'
+            ? AppPageRoute(page: const CustomerShell())
+            : AppPageRoute(page: HomeScreen(role: role)),
       );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'google-sign-in-cancelled') return;
