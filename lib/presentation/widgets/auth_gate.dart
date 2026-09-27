@@ -4,10 +4,27 @@ import '../../data/repositories/auth_repository.dart';
 import '../screens/auth/email_verification_screen.dart';
 import '../screens/auth/role_selection_screen.dart';
 import '../screens/home/home_screen.dart';
-import '../screens/splash/splash_screen.dart';
+import '../screens/splash/animated_logo.dart';
+import '../theme/colors/app_colors.dart';
 
-class AuthGate extends StatelessWidget {
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  String? _cachedUid;
+  Future<String?>? _roleFuture;
+
+  Future<String?> _roleFutureFor(String uid) {
+    if (_cachedUid != uid) {
+      _cachedUid = uid;
+      _roleFuture = AuthRepository().fetchRoleFor(uid);
+    }
+    return _roleFuture!;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +32,7 @@ class AuthGate extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SplashScreen();
+          return const _AuthLoadingView();
         }
 
         final user = snapshot.data;
@@ -24,10 +41,10 @@ class AuthGate extends StatelessWidget {
         }
 
         return FutureBuilder<String?>(
-          future: AuthRepository().fetchRoleFor(user.uid),
+          future: _roleFutureFor(user.uid),
           builder: (context, roleSnapshot) {
             if (roleSnapshot.connectionState == ConnectionState.waiting) {
-              return const SplashScreen();
+              return const _AuthLoadingView();
             }
 
             final role = roleSnapshot.data;
@@ -46,6 +63,20 @@ class AuthGate extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _AuthLoadingView extends StatelessWidget {
+  const _AuthLoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: AnimatedLogo(size: 260),
+      ),
     );
   }
 }

@@ -86,7 +86,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                       description: 'List your harvest and manage orders and stock.',
                       icon: Icons.agriculture_rounded,
                       accentColor: AppColors.autumnRust,
-                      accentTint: AppColors.autumnRust.withOpacity(0.10),
+                      accentTint: AppColors.autumnRust.withValues(alpha: 0.10),
                       isSelected: _selectedRole == UserRole.farmer,
                       onTap: () => setState(() => _selectedRole = UserRole.farmer),
                     ),
@@ -194,7 +194,7 @@ class _RoleTile extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: accentColor.withOpacity(0.15),
+                    color: accentColor.withValues(alpha: 0.15),
                     blurRadius: 14,
                     offset: const Offset(0, 6),
                   ),
@@ -210,7 +210,7 @@ class _RoleTile extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.14),
+                    color: accentColor.withValues(alpha: 0.14),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(icon, color: accentColor, size: 22),
@@ -218,13 +218,13 @@ class _RoleTile extends StatelessWidget {
                 if (isSelected)
                   Icon(Icons.check_circle_rounded, color: accentColor, size: 20)
                 else
-                  Icon(Icons.radio_button_unchecked, color: AppColors.border, size: 20),
+                  const Icon(Icons.radio_button_unchecked, color: AppColors.border, size: 20),
               ],
             ),
             const SizedBox(height: 14),
             Text(
               title,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,

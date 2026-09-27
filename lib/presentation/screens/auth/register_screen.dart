@@ -2,14 +2,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../data/models/user_role.dart';
 import '../../../data/repositories/auth_repository.dart';
+import '../../../data/static/country_code_picker.dart';
+import '../../../data/static/labeled_dropdown.dart';
 import '../../../data/static/location_data.dart';
+import '../../../data/static/searchable_dropdown.dart';
 import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
 import '../../widgets/app_page_route.dart';
 import '../../widgets/app_text_field.dart';
-import '../../../data/static/country_code_picker.dart';
-import '../../../data/static/labeled_dropdown.dart';
-import '../../../data/static/searchable_dropdown.dart';
+import '../customer/shell/customer_shell.dart';
 import '../home/home_screen.dart';
 import 'email_verification_screen.dart';
 
@@ -48,7 +49,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool get _isFarmer => widget.role == UserRole.farmer;
   Color get _accent => _isFarmer ? AppColors.autumnRust : AppColors.mainGreen;
   Color get _accentTint =>
-      _isFarmer ? AppColors.autumnRust.withOpacity(0.12) : AppColors.softGreen;
+      _isFarmer ? AppColors.autumnRust.withValues(alpha: 0.12) : AppColors.softGreen;
 
   @override
   void dispose() {
@@ -151,7 +152,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       } else {
         Navigator.of(context).pushReplacement(
-          AppPageRoute(page: HomeScreen(role: role)),
+          role == 'customer'
+              ? AppPageRoute(page: const CustomerShell())
+              : AppPageRoute(page: HomeScreen(role: role)),
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -200,11 +203,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         horizontal: 16, vertical: 14),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.border),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.border),
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -284,7 +287,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              
                 const SizedBox(height: 16),
                 Text(
                   _isFarmer
@@ -336,8 +338,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   icon: Icons.mail_outline,
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty)
+                    if (v == null || v.trim().isEmpty) {
                       return 'Email is required';
+                    }
                     if (!v.contains('@')) return 'Enter a valid email address';
                     return null;
                   },
@@ -420,12 +423,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      Expanded(child: Divider(color: AppColors.border)),
+                      const Expanded(child: Divider(color: AppColors.border)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Text('or', style: AppTextStyles.bodyMuted),
                       ),
-                      Expanded(child: Divider(color: AppColors.border)),
+                      const Expanded(child: Divider(color: AppColors.border)),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -433,7 +436,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     width: double.infinity,
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: AppColors.border),
+                        side: const BorderSide(color: AppColors.border),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
@@ -451,7 +454,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               border: Border.all(
                                   color: AppColors.textSecondary, width: 1),
                             ),
-                            child: Text(
+                            child: const Text(
                               'G',
                               style: TextStyle(
                                 fontSize: 11,

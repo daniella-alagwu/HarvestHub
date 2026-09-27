@@ -128,9 +128,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 20),
 
                 // 3. Category Icons Row
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: const [
+                  children: [
                     _CategoryChip(icon: Icons.eco_outlined, label: 'Vegetables'),
                     _CategoryChip(icon: Icons.apple_outlined, label: 'Fruit'),
                     _CategoryChip(icon: Icons.bakery_dining_outlined, label: 'Bakery'),
@@ -182,8 +182,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: const [
+                const Row(
+                  children: [
                     Expanded(
                       child: _ProductCard(
                         title: 'Heirloom Tomatoes',
@@ -240,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         border: Border.all(color: AppColors.autumnRust, width: 2.5),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.18),
+                            color: Colors.black.withValues(alpha: 0.18),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -333,7 +333,7 @@ class _CategoryChip extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: AppColors.softGreen.withOpacity(0.5),
+            color: AppColors.softGreen.withValues(alpha: 0.5),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: AppColors.mainGreen, size: 24),
@@ -376,7 +376,7 @@ class _FarmCard extends StatelessWidget {
           Text(
             subtext,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white.withValues(alpha: 0.85),
               fontSize: 12,
               height: 1.3,
             ),
@@ -414,7 +414,7 @@ class _ProductCard extends StatelessWidget {
           Container(
             height: 100,
             decoration: BoxDecoration(
-              color: AppColors.softGreen.withOpacity(0.3),
+              color: AppColors.softGreen.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Center(

@@ -14,8 +14,28 @@ class LogoutButton extends StatefulWidget {
 class _LogoutButtonState extends State<LogoutButton> {
   bool _isSigningOut = false;
 
-  Future<void> _handleLogout() async {
+    Future<void> _handleLogout() async {
     if (_isSigningOut) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Log out?'),
+        content: const Text('You\'ll need to sign in again to continue shopping.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Log out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
     setState(() => _isSigningOut = true);
     try {
       await AuthRepository().signOut();
