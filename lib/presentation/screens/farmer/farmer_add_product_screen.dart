@@ -107,8 +107,8 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: Text(_isEditing ? 'Edit product' : 'Add product', style: TextStyle(color: AppColors.textPrimary)),
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        title: Text(_isEditing ? 'Edit product' : 'Add product', style: const TextStyle(color: AppColors.textPrimary)),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -133,11 +133,11 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
                               : null),
                     ),
                     child: (_newImageBytes == null && existingImageUrl.isEmpty)
-                        ? Column(
+                        ? const Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.add_a_photo_outlined, color: AppColors.deepGreen, size: 28),
-                              const SizedBox(height: 8),
+                              SizedBox(height: 8),
                               Text('Tap to add a photo', style: TextStyle(color: AppColors.deepGreen, fontSize: 13)),
                             ],
                           )
@@ -223,19 +223,19 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(text, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+      child: Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
     );
   }
 
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 13),
+      hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
       filled: true,
       fillColor: AppColors.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.border)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.border)),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.mainGreen, width: 1.4)),
     );
   }

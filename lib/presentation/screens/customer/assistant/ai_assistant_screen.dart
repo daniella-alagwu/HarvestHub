@@ -97,7 +97,7 @@ appBar: AppBar(
                 'Farm Products Assistant',
                 style: TextStyle(
                   fontSize: 11.5, 
-                  color: Colors.white.withOpacity(0.85),
+                  color: Colors.white.withValues(alpha: 0.85),
                 ),
               ),
             ],
@@ -111,7 +111,7 @@ appBar: AppBar(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.softGreen.withOpacity(0.55), AppColors.background],
+            colors: [AppColors.softGreen.withValues(alpha: 0.55), AppColors.background],
             stops: const [0.0, 0.25],
           ),
         ),
@@ -191,7 +191,7 @@ class _MessageBubble extends StatelessWidget {
 
     final bubbleColor = isUser
         ? AppColors.mainGreen
-        : (message.isError ? AppColors.error.withOpacity(0.10) : Colors.white);
+        : (message.isError ? AppColors.error.withValues(alpha: 0.10) : Colors.white);
     final textColor = isUser ? Colors.white : AppColors.textPrimary;
 
     final bubble = Container(
@@ -207,7 +207,7 @@ class _MessageBubble extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -262,10 +262,10 @@ class _AssistantTypingBubble extends StatelessWidget {
                 bottomLeft: Radius.circular(4),
               ),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 3)),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 3)),
               ],
             ),
-            child: TypingIndicator(dotColor: AppColors.mainGreen.withOpacity(0.7)),
+            child: TypingIndicator(dotColor: AppColors.mainGreen.withValues(alpha: 0.7)),
           ),
         ],
       ),
@@ -298,7 +298,7 @@ class _SuggestionChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: accent.withOpacity(0.35)),
+            border: Border.all(color: accent.withValues(alpha: 0.35)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -331,7 +331,7 @@ class _ChatInputBar extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, 4)),
         ],
       ),
       child: Row(

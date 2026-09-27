@@ -127,7 +127,7 @@ class _CountrySearchSheetState extends State<_CountrySearchSheet> {
                 child: ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   itemCount: _filtered.length,
-                  separatorBuilder: (_, __) => Divider(height: 1, color: AppColors.border),
+                  separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
                   itemBuilder: (context, i) {
                     final c = _filtered[i];
                     return ListTile(

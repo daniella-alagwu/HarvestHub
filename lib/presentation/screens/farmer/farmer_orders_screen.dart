@@ -85,7 +85,7 @@ class _FarmerOrdersScreenState
         backgroundColor:
             AppColors.background,
         appBar: _buildAppBar(),
-        body: Center(
+        body: const Center(
           child: Text(
             'Not signed in.',
             style: TextStyle(
@@ -148,7 +148,7 @@ class _FarmerOrdersScreenState
                           _tabIndex == 0
                               ? 'No active orders yet.'
                               : 'No past orders yet.',
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: AppColors
                                 .textMuted,
                           ),
@@ -368,7 +368,7 @@ class _FarmerOrdersScreenState
                   order.orderId.length
                       .clamp(0, 6),
                 )}',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight:
                       FontWeight.w700,
@@ -395,7 +395,7 @@ class _FarmerOrdersScreenState
           ),
           Text(
             '${order.itemQuantity} item(s)',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
               color: AppColors
                   .textSecondary,
@@ -406,7 +406,7 @@ class _FarmerOrdersScreenState
           ),
           Text(
             '\$${order.totalPrice.toStringAsFixed(2)}',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 13,
               fontWeight:
                   FontWeight.w600,

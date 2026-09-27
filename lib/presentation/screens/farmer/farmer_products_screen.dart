@@ -50,7 +50,7 @@ class _FarmerProductsScreenState
         backgroundColor:
             AppColors.background,
         appBar: _buildAppBar(),
-        body: Center(
+        body: const Center(
           child: Text(
             'Not signed in.',
             style: TextStyle(
@@ -104,7 +104,7 @@ class _FarmerProductsScreenState
                   ),
                   Expanded(
                     child: products.isEmpty
-                        ? Center(
+                        ? const Center(
                             child: Text(
                               'No products yet. '
                               'Add your first one below.',
@@ -300,7 +300,7 @@ class _FarmerProductsScreenState
               child: product.imageUrl
                           ?.isEmpty !=
                       false
-                  ? Icon(
+                  ? const Icon(
                       Icons.eco_outlined,
                       color:
                           AppColors.mainGreen,
@@ -325,7 +325,7 @@ class _FarmerProductsScreenState
                 children: [
                   Text(
                     product.itemName,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight:
                           FontWeight.w600,
@@ -338,7 +338,7 @@ class _FarmerProductsScreenState
                   ),
                   Text(
                     '\$${product.pricePerUnit.toStringAsFixed(2)}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 11,
                       color: AppColors
                           .textSecondary,
@@ -359,7 +359,7 @@ class _FarmerProductsScreenState
             ),
           ),
           IconButton(
-            icon: Icon(
+            icon: const Icon(
               Icons
                   .remove_circle_outline,
               size: 20,
@@ -376,7 +376,7 @@ class _FarmerProductsScreenState
                     : null,
           ),
           IconButton(
-            icon: Icon(
+            icon: const Icon(
               Icons
                   .add_circle_outline,
               size: 20,
@@ -390,7 +390,7 @@ class _FarmerProductsScreenState
             ),
           ),
           IconButton(
-            icon: Icon(
+            icon: const Icon(
               Icons.delete_outline,
               size: 18,
               color: AppColors.error,
@@ -437,7 +437,7 @@ class _FarmerProductsScreenState
               context,
               true,
             ),
-            child: Text(
+            child: const Text(
               'Remove',
               style: TextStyle(
                 color:
@@ -554,7 +554,7 @@ class _MiniStat
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
               color: AppColors
                   .textSecondary,
