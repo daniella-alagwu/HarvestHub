@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../../data/repositories/auth_service.dart'
+import '../../data/repositories/auth_repository.dart';
 import '../screens/auth/email_verification_screen.dart';
 import '../screens/auth/role_selection_screen.dart';
 import '../screens/home/home_screen.dart';

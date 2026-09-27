@@ -30,14 +30,9 @@ Future<void> main() async {
     debugPrint('.env file not found or failed to load: $e');
   }
 
-  //for if firebase isn't config'd yet
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } catch (e) {
-    debugPrint('Firebase not configured yet: $e');
-  }
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(const HarvestHubApp());
 }

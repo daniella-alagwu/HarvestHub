@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../../../data/repositories/auth_service.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
 import '../../widgets/app_page_route.dart';
@@ -27,7 +27,7 @@ class EmailVerificationScreen extends StatefulWidget {
 }
 
 class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
-  final _authRepository = AuthService();
+  final _authRepository = AuthRepository();
 
   bool _isChecking = false;
   bool _isResending = false;

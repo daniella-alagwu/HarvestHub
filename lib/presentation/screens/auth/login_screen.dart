@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../../../data/repositories/auth_service.dart';
+import '../../../data/repositories/auth_repository.dart';
 import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
 import '../../widgets/app_page_route.dart';
@@ -25,7 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
-  final _authRepository = AuthService();
+  final _authRepository = AuthRepository();
 
   bool _obscurePassword = true;
   bool _isSubmitting = false;

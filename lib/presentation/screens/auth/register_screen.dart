@@ -1,13 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../data/models/user_role.dart';
-<<<<<<< HEAD
-import '../../../data/repositories/auth_service.dart';
-=======
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/static/country_code_picker.dart';
 import '../../../data/static/labeled_dropdown.dart';
->>>>>>> e6a51967925228e613c59e472987444c8c21af43
 import '../../../data/static/location_data.dart';
 import '../../../data/static/searchable_dropdown.dart';
 import '../../theme/colors/app_colors.dart';
@@ -39,7 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _stateManual = TextEditingController();
   final _businessName = TextEditingController();
   final _farmLocation = TextEditingController();
-  final _authRepository = AuthService();
+  final _authRepository = AuthRepository();
 
   CountryInfo _phoneCountry = LocationData.defaultCountry;
 
@@ -52,8 +48,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool get _isFarmer => widget.role == UserRole.farmer;
   Color get _accent => _isFarmer ? AppColors.autumnRust : AppColors.mainGreen;
-  Color get _accentTint =>
-      _isFarmer ? AppColors.autumnRust.withOpacity(0.12) : AppColors.softGreen;
 
   @override
   void dispose() {

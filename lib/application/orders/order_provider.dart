@@ -119,29 +119,18 @@ class OrderProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> placeOrder({
-    required String farmerId,
-    required Map<String, dynamic> itemsJson,
-    required double total,
+  Future<List<String>> placeOrders({
+    required List<Map<String, dynamic>> items,
     DateTime? pickupSlotTime,
     required String marketName,
   }) async {
-    final customerId =
-        FirebaseAuth.instance
-            .currentUser
-            ?.uid;
-
-    if (customerId == null) {
+    if (FirebaseAuth.instance.currentUser == null) {
       throw StateError(
         'You must be signed in to place an order.',
       );
     }
-
-    await _repository.placeOrder(
-      customerId: customerId,
-      farmerId: farmerId,
-      itemsJson: itemsJson,
-      total: total,
+    return _repository.placeOrders(
+      items: items,
       pickupSlotTime:
           pickupSlotTime,
       marketName: marketName,

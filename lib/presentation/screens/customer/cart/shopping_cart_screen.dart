@@ -129,68 +129,20 @@ class _ShoppingCartScreenState
   ) async {
     final total = cart.total;
 
-    final groups =
-        cart.itemsByFarmer;
-
     final pickupTime =
         _parsePickupTime(
       cart.pickupSlot?.label,
     );
 
-    var feeRemaining = cart.fee;
-
     try {
-      for (final entry
-          in groups.entries) {
-        final items = entry.value;
-
-        final itemsJson =
-            <String, dynamic>{
-          for (final item in items)
-            item.product.id: {
-              'item_name':
-                  item.product.name,
-              'quantity':
-                  item.quantity,
-              'unit':
-                  item.product.unit,
-              'price_per_unit':
-                  item.product.pricePerUnit,
-            },
-        };
-
-        final subtotal =
-            items.fold<double>(
-          0,
-          (
-            sum,
-            item,
-          ) =>
-              sum + item.lineTotal,
-        );
-
-        final groupFee =
-            feeRemaining > 0
-                ? feeRemaining
-                : 0;
-
-        feeRemaining -= groupFee;
-
-        await context
-            .read<OrderProvider>()
-            .placeOrder(
-          farmerId: entry.key,
-          marketName:
-              cart.pickupMarket
-                      ?.marketName ??
-                  '',
-          pickupSlotTime:
-              pickupTime,
-          itemsJson: itemsJson,
-          total:
-              subtotal + groupFee,
-        );
-      }
+      await context.read<OrderProvider>().placeOrders(
+        items: cart.itemList.map((item) => {
+          'productId': item.product.id,
+          'quantity': item.quantity,
+        }).toList(),
+        marketName: cart.pickupMarket?.marketName ?? '',
+        pickupSlotTime: pickupTime,
+      );
 
       cart.clear();
 

@@ -1,14 +1,20 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/order_model.dart' as order_model;
 
 class OrderRepository {
   OrderRepository({
     FirebaseFirestore? firestore,
-  }) : _firestore =
-          firestore ?? FirebaseFirestore.instance;
+    FirebaseAuth? auth,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
 
   CollectionReference<Map<String, dynamic>>
       get _orders =>
@@ -129,105 +135,41 @@ class OrderRepository {
     );
   }
 
-  // Create one order for a single farmer
-  Future<String> placeOrder({
-    required String customerId,
-    required String farmerId,
-    required Map<String, dynamic> itemsJson,
-    required double total,
+  // Checkout is handled by a trusted Cloud Function that validates prices
+  // and updates stock atomically across every farmer in the cart.
+  Future<List<String>> placeOrders({
+    required List<Map<String, dynamic>> items,
     DateTime? pickupSlotTime,
     required String marketName,
   }) async {
-    final batch =
-        _firestore.batch();
-
-    for (final entry
-        in itemsJson.entries) {
-      final productRef = _firestore
-          .collection('products')
-          .doc(entry.key);
-
-      final productDoc =
-          await productRef.get();
-
-      if (!productDoc.exists) {
-        throw StateError(
-          'Product ${entry.key} no longer exists.',
-        );
-      }
-
-      final data = productDoc.data() ??
-          const <String, dynamic>{};
-
-      final stock =
-          (data['stock_qty'] as num?)
-                  ?.toInt() ??
-              (data['stockQty'] as num?)
-                  ?.toInt() ??
-              (data['quantity'] as num?)
-                  ?.toInt() ??
-              0;
-
-      final quantity =
-          _quantityFrom(entry.value);
-
-      final productFarmerId =
-          data['farmer_id']?.toString() ??
-              data['farmerId']?.toString() ??
-              '';
-
-      if (productFarmerId != farmerId) {
-        throw StateError(
-          'A cart item belongs to another farmer.',
-        );
-      }
-
-      if (quantity <= 0 ||
-          quantity > stock) {
-        final name =
-            data['item_name']?.toString() ??
-                data['itemName']?.toString() ??
-                entry.key;
-
-        throw StateError(
-          '$name has insufficient stock.',
-        );
-      }
-
-      batch.update(
-        productRef,
-        {
-          'stock_qty': stock - quantity,
-        },
-      );
-    }
-
-    final orderRef =
-        _orders.doc();
-
-    batch.set(
-      orderRef,
-      {
-        'customer_id': customerId,
-        'farmer_id': farmerId,
-        'items_json': itemsJson,
-        'pickup_slot_time':
-            pickupSlotTime == null
-                ? null
-                : Timestamp.fromDate(
-                    pickupSlotTime,
-                  ),
-        'status': 'Pending',
-        'total_price': total,
-        'market_name': marketName,
-        'created_at':
-            FieldValue.serverTimestamp(),
+    final user = _auth.currentUser;
+    if (user == null) throw StateError('Sign in before placing an order.');
+    final token = await user.getIdToken();
+    if (token == null) throw StateError('Could not authenticate your order. Sign in again.');
+    final response = await http.post(
+      Uri.parse('https://us-central1-harvest-hub-d7d24.cloudfunctions.net/placeOrder'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
       },
+      body: jsonEncode({
+        'data': {
+          'items': items,
+          'marketName': marketName,
+          'pickupSlotTime': pickupSlotTime?.millisecondsSinceEpoch,
+        },
+      }),
     );
-
-    await batch.commit();
-
-    return orderRef.id;
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode < 200 || response.statusCode >= 300 || body['error'] != null) {
+      final error = body['error'];
+      final message = error is Map ? error['message']?.toString() : null;
+      throw StateError(message ?? 'Order could not be placed. Please try again.');
+    }
+    final result = body['result'] as Map<String, dynamic>?;
+    final ids = result?['orderIds'];
+    if (ids is! List) throw StateError('The order service returned an invalid response.');
+    return ids.map((id) => id.toString()).toList();
   }
 
   Future<void> updatePickupSlot(
@@ -247,25 +189,6 @@ class OrderRepository {
     await _orders.doc(orderId).update({
       'status': status,
     });
-  }
-
-  static int _quantityFrom(
-    Object? value,
-  ) {
-    if (value is num) {
-      return value.ceil();
-    }
-
-    if (value is Map) {
-      final quantity =
-          value['quantity'];
-
-      if (quantity is num) {
-        return quantity.ceil();
-      }
-    }
-
-    return 0;
   }
 
   static List<order_model.Order>

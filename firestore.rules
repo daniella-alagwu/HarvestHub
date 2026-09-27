@@ -6,59 +6,51 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-<<<<<<< HEAD
-    function isAdmin() {
-      return signedIn() && request.auth.token.admin == true;
-    }
-
     function hasRole(role) {
       return signedIn()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
     }
 
     match /users/{userId} {
       allow create: if signedIn()
         && request.auth.uid == userId
         && request.resource.data.role in ['customer', 'farmer'];
-
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
-
-      // A user may edit profile details, but role and account creation time are immutable.
       allow update: if signedIn()
         && request.auth.uid == userId
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.created_at == resource.data.created_at
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['name', 'email', 'phone', 'address', 'email_verified']);
-
+          .hasOnly(['name', 'email', 'phone', 'address', 'pickup_location', 'email_verified']);
       allow delete: if isAdmin();
     }
 
     match /farmers/{farmerId} {
-      allow create: if signedIn()
-        && request.auth.uid == farmerId
-        && hasRole('farmer')
-        && request.resource.data.user_id == farmerId;
-
       allow read: if true;
-
-      allow update: if signedIn()
-        && request.auth.uid == farmerId
-        && hasRole('farmer')
-        && request.resource.data.user_id == resource.data.user_id;
-
+      allow create: if signedIn() && request.auth.uid == farmerId
+        && hasRole('farmer') && request.resource.data.user_id == farmerId;
+      allow update: if signedIn() && request.auth.uid == farmerId
+        && hasRole('farmer') && request.resource.data.user_id == resource.data.user_id;
       allow delete: if isAdmin();
     }
 
-    match /products/{productId} {
-      // Customers and visitors can browse active listings.
+    match /farmers_market/{marketId} {
       allow read: if true;
+      allow write: if isAdmin();
+    }
 
+    match /products/{productId} {
+      allow read: if true;
       allow create: if hasRole('farmer')
         && request.resource.data.farmer_id == request.auth.uid
         && request.resource.data.price_per_unit is number
         && request.resource.data.price_per_unit >= 0
         && request.resource.data.stock_qty is int
         && request.resource.data.stock_qty >= 0;
-
       allow update: if hasRole('farmer')
         && resource.data.farmer_id == request.auth.uid
         && request.resource.data.farmer_id == resource.data.farmer_id
@@ -66,148 +58,52 @@ service cloud.firestore {
         && request.resource.data.price_per_unit >= 0
         && request.resource.data.stock_qty is int
         && request.resource.data.stock_qty >= 0;
-
       allow delete: if (hasRole('farmer') && resource.data.farmer_id == request.auth.uid)
         || isAdmin();
     }
 
     match /orders/{orderId} {
-      allow create: if hasRole('customer')
-        && request.resource.data.customer_id == request.auth.uid
-        && request.resource.data.farmer_id is string
-        && request.resource.data.items_json is string
-        && request.resource.data.total_price is number
-        && request.resource.data.total_price >= 0
-        && request.resource.data.status == 'Pending'
-        && request.resource.data.keys().hasOnly([
-          'customer_id', 'farmer_id', 'items_json', 'pickup_slot_time',
-          'status', 'total_price', 'created_at'
-        ]);
-
+      // Orders are created by the trusted placeOrder Cloud Function only.
+      allow create: if false;
       allow read: if signedIn()
         && (resource.data.customer_id == request.auth.uid
-          || resource.data.farmer_id == request.auth.uid
-          || isAdmin());
-
-      // Farmers can advance their own orders; customers can cancel their own pending order.
+          || resource.data.farmer_id == request.auth.uid || isAdmin());
       allow update: if signedIn()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'pickup_slot_time'])
         && request.resource.data.customer_id == resource.data.customer_id
         && request.resource.data.farmer_id == resource.data.farmer_id
         && ((resource.data.farmer_id == request.auth.uid
               && hasRole('farmer')
-              && request.resource.data.status in [
-                'Confirmed', 'Ready for Pickup', 'Completed', 'Cancelled'
-              ])
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+              && request.resource.data.status in ['Confirmed', 'Ready for Pickup', 'Completed', 'Cancelled'])
           || (resource.data.customer_id == request.auth.uid
-              && resource.data.status == 'Pending'
-              && request.resource.data.status == 'Cancelled')
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pickup_slot_time'])
+              && resource.data.status == 'Pending')
           || isAdmin());
-
       allow delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow create: if hasRole('farmer')
+        && request.resource.data.farmer_id == request.auth.uid;
+      allow read, delete: if hasRole('farmer')
+        && resource.data.farmer_id == request.auth.uid;
+      allow update: if hasRole('farmer')
+        && resource.data.farmer_id == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['is_read']);
+    }
+
+    match /wishlists/{userId}/items/{productId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /follows/{userId}/farmers/{farmerId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
     }
 
     match /{document=**} {
       allow read, write: if false;
-=======
-    function currentUserRole() {
-      return signedIn()
-        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
-        : null;
-    }
-
-    function isFarmer() {
-      return signedIn() && currentUserRole() == 'farmer';
-    }
-
-    function isCustomer() {
-      return signedIn() && currentUserRole() == 'customer';
-    }
-
-    match /users/{userId} {
-      allow create: if signedIn() && request.auth.uid == userId;
-      allow read, update: if signedIn() && request.auth.uid == userId;
-    }
-
-    match /farmers/{farmerId} {
-      allow read: if signedIn();
-      allow create, update: if isFarmer() && request.auth.uid == farmerId;
-    }
-
-    match /farmers_market/{marketId} {
-      allow read: if signedIn();
-      allow create, update, delete: if isFarmer();
-    }
-
-    match /products/{productId} {
-      allow read: if signedIn();
-
-      allow create: if isFarmer()
-        && request.resource.data.farmer_id == request.auth.uid;
-
-      allow update, delete: if isFarmer()
-        && resource.data.farmer_id == request.auth.uid;
-
-      allow update: if isCustomer()
-        && request.resource.data.diff(resource.data)
-            .affectedKeys()
-            .hasOnly(['stock_qty'])
-        && request.resource.data.stock_qty is int
-        && request.resource.data.stock_qty >= 0
-        && request.resource.data.stock_qty <= resource.data.stock_qty;
-    }
-
-    match /orders/{orderId} {
-      allow read: if signedIn()
-        && (
-          resource.data.customer_id == request.auth.uid ||
-          resource.data.farmer_id == request.auth.uid
-        );
-
-      allow create: if isCustomer()
-        && request.resource.data.customer_id == request.auth.uid;
-
-      // Customer may only change their pickup slot.
-      // Farmer may only change order status.
-      allow update: if signedIn() && (
-        (
-          resource.data.customer_id == request.auth.uid
-          && request.resource.data.customer_id == resource.data.customer_id
-          && request.resource.data.farmer_id == resource.data.farmer_id
-          && request.resource.data.diff(resource.data)
-              .affectedKeys()
-              .hasOnly(['pickup_slot_time'])
-        )
-        ||
-        (
-          isFarmer()
-          && resource.data.farmer_id == request.auth.uid
-          && request.resource.data.customer_id == resource.data.customer_id
-          && request.resource.data.farmer_id == resource.data.farmer_id
-          && request.resource.data.diff(resource.data)
-              .affectedKeys()
-              .hasOnly(['status'])
-        )
-      );
-    }
-
-    match /notifications/{notificationId} {
-      allow create: if isFarmer()
-        && request.resource.data.farmer_id == request.auth.uid;
-
-      allow read, update: if isFarmer()
-        && resource.data.farmer_id == request.auth.uid;
-    }
-
-    match /wishlists/{userId}/items/{productId} {
-      allow read, write: if signedIn()
-        && request.auth.uid == userId;
-    }
-
-    match /follows/{userId}/farmers/{farmerId} {
-      allow read, write: if signedIn()
-        && request.auth.uid == userId;
->>>>>>> e6a51967925228e613c59e472987444c8c21af43
     }
   }
 }
