@@ -148,10 +148,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircleAvatar(
+              const CircleAvatar(
                 radius: 30,
                 backgroundColor: AppColors.softGreen,
-                child: const Icon(Icons.mark_email_unread_outlined,
+                child: Icon(Icons.mark_email_unread_outlined,
                     color: AppColors.mainGreen, size: 28),
               ),
               const SizedBox(height: 20),
@@ -168,7 +168,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline,
+                  const Icon(Icons.info_outline,
                       color: AppColors.textSecondary, size: 16),
                   const SizedBox(width: 6),
                   Expanded(
@@ -211,7 +211,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                 width: double.infinity,
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppColors.border),
+                    side: const BorderSide(color: AppColors.border),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),

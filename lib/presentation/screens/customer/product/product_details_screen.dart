@@ -193,7 +193,7 @@ class _ProductDetailsScreenState
                     ),
                   ),
                   if (product.isOrganic)
-                    Positioned(
+                    const Positioned(
                       left: 12,
                       bottom: 12,
                       child: _Badge(
@@ -327,7 +327,7 @@ class _ProductDetailsScreenState
                       ],
                     )
                   else
-                    PrimaryButton(
+                    const PrimaryButton(
                       label:
                           'Out of stock',
                       onPressed: null,

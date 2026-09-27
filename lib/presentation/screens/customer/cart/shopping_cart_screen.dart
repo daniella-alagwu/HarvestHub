@@ -393,7 +393,7 @@ class _ShoppingCartScreenState
                                       AppColors
                                           .surface,
                                   side:
-                                      BorderSide(
+                                      const BorderSide(
                                     color: AppColors
                                         .border,
                                   ),

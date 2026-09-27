@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/colors/app_colors.dart';
 import '../theme/text_styles.dart';
 
 class PrimaryButton extends StatelessWidget {

@@ -31,9 +31,9 @@ class FarmerNotificationsScreen extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.notifications_none_rounded, size: 48, color: AppColors.mainGreen.withOpacity(0.4)),
+                    Icon(Icons.notifications_none_rounded, size: 48, color: AppColors.mainGreen.withValues(alpha: 0.4)),
                     const SizedBox(height: 12),
-                    Text("You're all caught up.", style: TextStyle(color: AppColors.textSecondary)),
+                    const Text("You're all caught up.", style: TextStyle(color: AppColors.textSecondary)),
                   ],
                 ),
               );
@@ -57,8 +57,8 @@ class FarmerNotificationsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: n.isRead ? AppColors.surface : AppColors.softGreen.withOpacity(0.5),
-        border: Border.all(color: n.isRead ? AppColors.border : AppColors.mainGreen.withOpacity(0.3)),
+        color: n.isRead ? AppColors.surface : AppColors.softGreen.withValues(alpha: 0.5),
+        border: Border.all(color: n.isRead ? AppColors.border : AppColors.mainGreen.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -66,7 +66,7 @@ class FarmerNotificationsScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: AppColors.softGreen, shape: BoxShape.circle),
+            decoration: const BoxDecoration(color: AppColors.softGreen, shape: BoxShape.circle),
             child: Icon(icon, size: 18, color: AppColors.deepGreen),
           ),
           const SizedBox(width: 12),
@@ -93,7 +93,7 @@ class FarmerNotificationsScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(n.message, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                Text(n.message, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               ],
             ),
           ),
@@ -102,7 +102,7 @@ class FarmerNotificationsScreen extends StatelessWidget {
             onTap: () => repo.setNotificationRead(n.id, !n.isRead),
             child: Text(
               n.isRead ? 'Mark unread' : 'Mark read',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.mainGreen),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.mainGreen),
             ),
           ),
         ],

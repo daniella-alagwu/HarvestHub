@@ -7,7 +7,7 @@ class AppTextStyles {
   AppTextStyles._();
 
   // font Poppins
-  static TextStyle _base = GoogleFonts.poppins();
+  static final TextStyle _base = GoogleFonts.poppins();
 
   static TextStyle get splashWordmark => _base.copyWith(
         fontSize: 32,

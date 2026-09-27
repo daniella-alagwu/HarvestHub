@@ -30,7 +30,15 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(),
-        body: Center(child: Text('Not signed in.', style: TextStyle(color: AppColors.textSecondary))),
+        body: const Center(
+          child: Text(
+            'Not signed in.',
+            style: TextStyle(
+              color: AppColors
+                  .textSecondary,
+            ),
+          ),
+        ),
       );
     }
 
@@ -53,7 +61,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
                   const SizedBox(height: 16),
                   Expanded(
                     child: products.isEmpty
-                        ? Center(
+                        ? const Center(
                             child: Text(
                               'No products yet. Add your first one below.',
                               style: TextStyle(color: AppColors.textMuted),
@@ -152,8 +160,14 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
                     ? DecorationImage(image: NetworkImage(product.imageUrl!), fit: BoxFit.cover)
                     : null,
               ),
-              child: product.imageUrl?.isEmpty != false
-                  ? Icon(Icons.eco_outlined, color: AppColors.mainGreen)
+              child: product.imageUrl
+                          ?.isEmpty !=
+                      false
+                  ? const Icon(
+                      Icons.eco_outlined,
+                      color:
+                          AppColors.mainGreen,
+                    )
                   : null,
             ),
           ),
@@ -166,12 +180,24 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
                 children: [
                   Text(
                     product.itemName,
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight:
+                          FontWeight.w600,
+                      color: AppColors
+                          .textPrimary,
+                    ),
+                    overflow:
+                        TextOverflow
+                            .ellipsis,
                   ),
                   Text(
-                    '₦${product.pricePerUnit.toStringAsFixed(2)}',
-                    style: TextStyle(fontSize: 11, color: AppColors.earthySoil, fontWeight: FontWeight.w600),
+                    '\$${product.pricePerUnit.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors
+                          .textSecondary,
+                    ),
                   ),
                   Text(
                     stockLabel,
@@ -182,16 +208,46 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
             ),
           ),
           IconButton(
-            icon: Icon(Icons.remove_circle_outline, size: 20, color: AppColors.textSecondary),
-            onPressed: product.stockQty > 0 ? () => _repo.adjustStock(product.productId, -1) : null,
+            icon: const Icon(
+              Icons
+                  .remove_circle_outline,
+              size: 20,
+              color: AppColors
+                  .textSecondary,
+            ),
+            onPressed:
+                product.stockQty > 0
+                    ? () =>
+                        _repo.adjustStock(
+                      product.productId,
+                      -1,
+                    )
+                    : null,
           ),
           IconButton(
-            icon: Icon(Icons.add_circle_outline, size: 20, color: AppColors.textSecondary),
-            onPressed: () => _repo.adjustStock(product.productId, 1),
+            icon: const Icon(
+              Icons
+                  .add_circle_outline,
+              size: 20,
+              color: AppColors
+                  .textSecondary,
+            ),
+            onPressed: () =>
+                _repo.adjustStock(
+              product.productId,
+              1,
+            ),
           ),
           IconButton(
-            icon: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-            onPressed: () => _confirmDelete(product),
+            icon: const Icon(
+              Icons.delete_outline,
+              size: 18,
+              color: AppColors.error,
+            ),
+            onPressed: () =>
+                _confirmDelete(
+              product,
+            ),
           ),
         ],
       ),
@@ -207,8 +263,27 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Remove', style: TextStyle(color: AppColors.error)),
+            onPressed: () =>
+                Navigator.pop(
+              context,
+              false,
+            ),
+            child:
+                const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(
+              context,
+              true,
+            ),
+            child: const Text(
+              'Remove',
+              style: TextStyle(
+                color:
+                    AppColors.error,
+              ),
+            ),
           ),
         ],
       ),
@@ -268,8 +343,17 @@ class _MiniStat extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors
+                  .textSecondary,
+            ),
+          ),
+          const SizedBox(
+            height: 4,
+          ),
           Text(
             value,
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: noteColor ?? AppColors.textPrimary),

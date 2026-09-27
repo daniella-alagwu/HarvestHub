@@ -36,9 +36,9 @@ class WelcomeScreen extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppColors.background.withOpacity(0.15), 
-                    AppColors.background.withOpacity(0.10), 
-                    AppColors.background.withOpacity(0.45), 
+                    AppColors.background.withValues(alpha: 0.15), 
+                    AppColors.background.withValues(alpha: 0.10), 
+                    AppColors.background.withValues(alpha: 0.45), 
                   ],
                   stops: const [0.0, 0.45, 1.0],
                 ),
@@ -76,7 +76,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
 
                  
-                  Text(
+                  const Text(
                     'Direct from local farms to your table.\nFresh produce, honest pricing, zero middleman.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -122,7 +122,7 @@ class WelcomeScreen extends StatelessWidget {
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textPrimary,
-                        backgroundColor: AppColors.surface.withOpacity(0.90), 
+                        backgroundColor: AppColors.surface.withValues(alpha: 0.90), 
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         side: const BorderSide(color: AppColors.border, width: 1.5),
                         shape: RoundedRectangleBorder(

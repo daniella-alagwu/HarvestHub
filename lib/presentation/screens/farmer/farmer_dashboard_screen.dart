@@ -90,13 +90,13 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: AppColors.background,
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
     if (_farmerId == null) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: AppColors.background,
         body: Center(
           child: Text('No farmer profile found.', style: TextStyle(color: AppColors.textSecondary)),
@@ -174,17 +174,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
           const SizedBox(height: 16),
           if (lowStock.isNotEmpty) _buildLowStockBanner(lowStock),
           const SizedBox(height: 20),
-          Row(
-            children: [
-              Icon(Icons.local_florist_outlined, size: 16, color: AppColors.autumnRust),
-              const SizedBox(width: 6),
-              Text('Recent orders',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-            ],
-          ),
+          const Text('Recent orders',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
           const SizedBox(height: 10),
           if (recentOrders.isEmpty)
-            Text('No orders yet.', style: TextStyle(fontSize: 13, color: AppColors.textMuted))
+            const Text('No orders yet.', style: TextStyle(fontSize: 13, color: AppColors.textMuted))
           else
             ...recentOrders.map((o) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
@@ -204,10 +198,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Welcome, $_farmerName',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
               const SizedBox(height: 2),
               Text(_farmName,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mainGreen)),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.mainGreen)),
             ],
           ),
         ),
@@ -228,7 +222,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                   border: Border.all(color: AppColors.border),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
+                child: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
               ),
               if (unreadCount > 0)
                 Positioned(
@@ -270,21 +264,21 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.wheatGold.withOpacity(0.12),
+        color: AppColors.wheatGold.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.wheatGold.withOpacity(0.3)),
+        border: Border.all(color: AppColors.wheatGold.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          Icon(Icons.warning_amber_rounded, color: AppColors.wheatGold),
+          const Icon(Icons.warning_amber_rounded, color: AppColors.wheatGold),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Low-stock attention',
+                const Text('Low-stock attention',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                Text(names, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                Text(names, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               ],
             ),
           ),
@@ -305,12 +299,12 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text('#${order.orderId.substring(0, order.orderId.length.clamp(0, 6))}',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('₦${order.totalPrice.toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+              Text('\$${order.totalPrice.toStringAsFixed(2)}',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
               Text(order.status, style: TextStyle(fontSize: 12, color: _statusColor(order.status))),
             ],
           ),
@@ -339,17 +333,9 @@ class _StatTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              if (accentColor != null) ...[
-                Container(width: 6, height: 6, decoration: BoxDecoration(color: accentColor, shape: BoxShape.circle)),
-                const SizedBox(width: 6),
-              ],
-              Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-            ],
-          ),
+          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           const SizedBox(height: 4),
-          Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
         ],
       ),
     );

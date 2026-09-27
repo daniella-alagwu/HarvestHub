@@ -46,7 +46,15 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(),
-        body: Center(child: Text('Not signed in.', style: TextStyle(color: AppColors.textSecondary))),
+        body: const Center(
+          child: Text(
+            'Not signed in.',
+            style: TextStyle(
+              color: AppColors
+                  .textSecondary,
+            ),
+          ),
+        ),
       );
     }
 
@@ -72,8 +80,13 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                     if (filtered.isEmpty) {
                       return Center(
                         child: Text(
-                          _tabIndex == 0 ? 'No active orders yet.' : 'No past orders yet.',
-                          style: TextStyle(color: AppColors.textMuted),
+                          _tabIndex == 0
+                              ? 'No active orders yet.'
+                              : 'No past orders yet.',
+                          style: const TextStyle(
+                            color: AppColors
+                                .textMuted,
+                          ),
                         ),
                       );
                     }
@@ -180,8 +193,18 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '#${order.orderId.substring(0, order.orderId.length.clamp(0, 6))}',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.autumnRust),
+                '#${order.orderId.substring(
+                  0,
+                  order.orderId.length
+                      .clamp(0, 6),
+                )}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight:
+                      FontWeight.w700,
+                  color: AppColors
+                      .textPrimary,
+                ),
               ),
               Text(
                 order.status,
@@ -193,11 +216,36 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
           Text('${order.itemQuantity} item(s)', style: TextStyle(fontSize: 12, color: AppColors.earthySoil)),
           const SizedBox(height: 6),
           Text(
-            '₦${order.totalPrice.toStringAsFixed(2)}',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+            '${order.itemQuantity} item(s)',
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors
+                  .textSecondary,
+            ),
           ),
-          const SizedBox(height: 10),
-          if (!['Completed', 'Cancelled', 'Rejected'].contains(order.status))
+          const SizedBox(
+            height: 6,
+          ),
+          Text(
+            '\$${order.totalPrice.toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight:
+                  FontWeight.w600,
+              color: AppColors
+                  .textPrimary,
+            ),
+          ),
+          const SizedBox(
+            height: 10,
+          ),
+          if (![
+            'Completed',
+            'Cancelled',
+            'Rejected',
+          ].contains(
+            order.status,
+          ))
             Wrap(
               spacing: 8,
               runSpacing: 8,

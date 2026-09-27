@@ -45,7 +45,7 @@ class _FarmerReportsScreenState extends State<FarmerReportsScreen> {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(),
-        body: Center(child: Text('Not signed in.', style: TextStyle(color: AppColors.textSecondary))),
+        body: const Center(child: Text('Not signed in.', style: TextStyle(color: AppColors.textSecondary))),
       );
     }
 
@@ -158,11 +158,9 @@ class _ReportTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           const SizedBox(height: 4),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 20, fontWeight: FontWeight.bold, color: valueColor ?? AppColors.textPrimary)),
+          Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
         ],
       ),
     );
