@@ -11,7 +11,7 @@ import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/role_selection_screen.dart';
 import 'presentation/screens/auth/register_screen.dart';
 import 'presentation/screens/customer/assistant/ai_assistant_screen.dart';
-
+import 'presentation/screens/farmer/farmer_dashboard_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
