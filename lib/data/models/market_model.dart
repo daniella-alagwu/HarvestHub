@@ -1,5 +1,5 @@
-/// Mirrors the `farmers_market/{marketId}` Firestore document
-/// (see PROJECT_BLUEPRINT.md §4).
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Market {
   const Market({
     required this.id,
@@ -14,6 +14,57 @@ class Market {
   final String address;
   final List<PickupSlot> pickupSlots;
   final bool activeStatus;
+
+  factory Market.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data =
+        doc.data() ?? const <String, dynamic>{};
+
+    final rawSlots =
+        data['pickup_slots'] ??
+        data['pickupSlots'] ??
+        const [];
+
+    final slots = rawSlots is List
+        ? rawSlots
+            .map((slot) {
+              if (slot is Map) {
+                return PickupSlot(
+                  label: slot['label']?.toString() ?? '',
+                  isAvailable:
+                      slot['is_available'] is bool
+                          ? slot['is_available'] as bool
+                          : slot['isAvailable'] is bool
+                              ? slot['isAvailable'] as bool
+                              : true,
+                );
+              }
+
+              return PickupSlot(
+                label: slot.toString(),
+              );
+            })
+            .where(
+              (slot) => slot.label.isNotEmpty,
+            )
+            .toList()
+        : <PickupSlot>[];
+
+    return Market(
+      id: doc.id,
+      marketName:
+          data['market_name']?.toString() ??
+              'Local Farmers Market',
+      address:
+          data['address']?.toString() ?? '',
+      pickupSlots: slots,
+      activeStatus:
+          data['active_status'] is bool
+              ? data['active_status'] as bool
+              : true,
+    );
+  }
 }
 
 class PickupSlot {
@@ -22,7 +73,6 @@ class PickupSlot {
     this.isAvailable = true,
   });
 
-  /// e.g. "Sat 9:00–10:00"
   final String label;
   final bool isAvailable;
 }

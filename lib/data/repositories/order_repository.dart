@@ -1,126 +1,287 @@
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/order_model.dart';
 
-class OrderStatus {
-  static const pending = 'Placed';
-  static const packed = 'Packed';
-  static const readyForPickup = 'Ready';
-  static const completed = 'Picked up';
-  static const cancelled = 'Cancelled';
-}
+import '../models/order_model.dart' as order_model;
 
 class OrderRepository {
-  OrderRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  OrderRepository({
+    FirebaseFirestore? firestore,
+  }) : _firestore =
+          firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _firestore;
 
-  CollectionReference<Map<String, dynamic>> get _orders =>
-      _firestore.collection('orders');
+  CollectionReference<Map<String, dynamic>>
+      get _orders =>
+          _firestore.collection('orders');
 
-  //validating stocks...
+  Future<List<order_model.Order>> fetchActive(
+    String customerId,
+  ) async {
+    final snapshot = await _orders
+        .where(
+          'customer_id',
+          isEqualTo: customerId,
+        )
+        .get();
+
+    final orders = _sortNewest(
+      snapshot.docs
+          .map(order_model.Order.fromFirestore)
+          .toList(),
+    );
+
+    return orders.where((order) {
+      final status =
+          order.status.toLowerCase();
+
+      return status != 'completed' &&
+          status != 'picked up' &&
+          status != 'cancelled';
+    }).toList();
+  }
+
+  Future<List<order_model.Order>> fetchPast(
+    String customerId,
+  ) async {
+    final snapshot = await _orders
+        .where(
+          'customer_id',
+          isEqualTo: customerId,
+        )
+        .get();
+
+    final orders = _sortNewest(
+      snapshot.docs
+          .map(order_model.Order.fromFirestore)
+          .toList(),
+    );
+
+    return orders.where((order) {
+      final status =
+          order.status.toLowerCase();
+
+      return status == 'completed' ||
+          status == 'picked up' ||
+          status == 'cancelled';
+    }).toList();
+  }
+
+  Stream<List<order_model.Order>>
+      watchForCustomer(
+    String customerId,
+  ) {
+    return _orders
+        .where(
+          'customer_id',
+          isEqualTo: customerId,
+        )
+        .snapshots()
+        .map(
+          (snapshot) => _sortNewest(
+            snapshot.docs
+                .map(
+                  order_model
+                      .Order
+                      .fromFirestore,
+                )
+                .toList(),
+          ),
+        );
+  }
+
+  Stream<List<order_model.Order>>
+      watchForFarmer(
+    String farmerId,
+  ) {
+    return _orders
+        .where(
+          'farmer_id',
+          isEqualTo: farmerId,
+        )
+        .snapshots()
+        .map(
+          (snapshot) => _sortNewest(
+            snapshot.docs
+                .map(
+                  order_model
+                      .Order
+                      .fromFirestore,
+                )
+                .toList(),
+          ),
+        );
+  }
+
+  Future<order_model.Order> getOrderById(
+    String orderId,
+  ) async {
+    final doc =
+        await _orders.doc(orderId).get();
+
+    if (!doc.exists) {
+      throw StateError(
+        'Order $orderId not found',
+      );
+    }
+
+    return order_model.Order.fromFirestore(
+      doc,
+    );
+  }
+
+  // Create one order for a single farmer
   Future<String> placeOrder({
     required String customerId,
     required String farmerId,
-    required List<Map<String, dynamic>> items,
-    required DateTime pickupSlotTime,
-    required double totalPrice,
-    String marketName = 'Local Farmers Market',
-  }) {
-    return _firestore.runTransaction<String>((transaction) async {
-      final Map<String, dynamic> itemsSummaryMap = {};
+    required Map<String, dynamic> itemsJson,
+    required double total,
+    DateTime? pickupSlotTime,
+    required String marketName,
+  }) async {
+    final batch =
+        _firestore.batch();
 
-      for (final item in items) {
-        final productId = item['product_id'] as String;
-        final productName = item['item_name'] ?? 'Item';
-        final productRef = _firestore.collection('products').doc(productId);
+    for (final entry
+        in itemsJson.entries) {
+      final productRef = _firestore
+          .collection('products')
+          .doc(entry.key);
 
-        final snapshot = await transaction.get(productRef);
-        final currentStock =
-            (snapshot.data()?['stock_qty'] as num?)?.toInt() ?? 0;
-        final quantity = (item['quantity'] as num).toInt();
+      final productDoc =
+          await productRef.get();
 
-        if (currentStock < quantity) {
-          throw Exception('$productName is out of stock.');
-        }
-
-        // deduction
-        transaction.update(productRef, {'stock_qty': currentStock - quantity});
-
-        
-        itemsSummaryMap[productName] = quantity;
+      if (!productDoc.exists) {
+        throw StateError(
+          'Product ${entry.key} no longer exists.',
+        );
       }
 
-      final orderRef = _orders.doc();
-      transaction.set(orderRef, {
+      final data = productDoc.data() ??
+          const <String, dynamic>{};
+
+      final stock =
+          (data['stock_qty'] as num?)
+                  ?.toInt() ??
+              (data['stockQty'] as num?)
+                  ?.toInt() ??
+              (data['quantity'] as num?)
+                  ?.toInt() ??
+              0;
+
+      final quantity =
+          _quantityFrom(entry.value);
+
+      final productFarmerId =
+          data['farmer_id']?.toString() ??
+              data['farmerId']?.toString() ??
+              '';
+
+      if (productFarmerId != farmerId) {
+        throw StateError(
+          'A cart item belongs to another farmer.',
+        );
+      }
+
+      if (quantity <= 0 ||
+          quantity > stock) {
+        final name =
+            data['item_name']?.toString() ??
+                data['itemName']?.toString() ??
+                entry.key;
+
+        throw StateError(
+          '$name has insufficient stock.',
+        );
+      }
+
+      batch.update(
+        productRef,
+        {
+          'stock_qty': stock - quantity,
+        },
+      );
+    }
+
+    final orderRef =
+        _orders.doc();
+
+    batch.set(
+      orderRef,
+      {
         'customer_id': customerId,
         'farmer_id': farmerId,
-        'items_json': itemsSummaryMap,
-        'pickup_slot_time': Timestamp.fromDate(pickupSlotTime),
-        'status': OrderStatus.pending,
-        'total_price': totalPrice,
+        'items_json': itemsJson,
+        'pickup_slot_time':
+            pickupSlotTime == null
+                ? null
+                : Timestamp.fromDate(
+                    pickupSlotTime,
+                  ),
+        'status': 'Pending',
+        'total_price': total,
         'market_name': marketName,
-        'created_at': FieldValue.serverTimestamp(),
-      });
+        'created_at':
+            FieldValue.serverTimestamp(),
+      },
+    );
 
-      return orderRef.id;
+    await batch.commit();
+
+    return orderRef.id;
+  }
+
+  Future<void> updatePickupSlot(
+    String orderId,
+    DateTime newSlotTime,
+  ) async {
+    await _orders.doc(orderId).update({
+      'pickup_slot_time':
+          Timestamp.fromDate(newSlotTime),
     });
   }
 
- //update
-  Future<void> updateOrderStatus(String orderId, String status) {
-    return _orders.doc(orderId).update({'status': status});
+  Future<void> updateStatus(
+    String orderId,
+    String status,
+  ) async {
+    await _orders.doc(orderId).update({
+      'status': status,
+    });
   }
 
-  
-  Future<Order?> getOrder(String orderId) async {
-    final doc = await _orders.doc(orderId).get();
-    if (!doc.exists) return null;
-    return Order.fromFirestore(doc);
+  static int _quantityFrom(
+    Object? value,
+  ) {
+    if (value is num) {
+      return value.ceil();
+    }
+
+    if (value is Map) {
+      final quantity =
+          value['quantity'];
+
+      if (quantity is num) {
+        return quantity.ceil();
+      }
+    }
+
+    return 0;
   }
 
-  
-  Stream<List<Order>> watchOrdersForCustomer(String customerId) {
-    return _orders
-        .where('customer_id', isEqualTo: customerId)
-        .orderBy('created_at', descending: true)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Order.fromFirestore(doc)).toList());
-  }
+  static List<order_model.Order>
+      _sortNewest(
+    List<order_model.Order> orders,
+  ) {
+    orders.sort(
+      (a, b) =>
+          (b.createdAt ??
+                  DateTime(1970))
+              .compareTo(
+        a.createdAt ??
+            DateTime(1970),
+      ),
+    );
 
-  
-  Stream<List<Order>> watchOrdersForFarmer(String farmerId) {
-    return _orders
-        .where('farmer_id', isEqualTo: farmerId)
-        .orderBy('created_at', descending: true)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => Order.fromFirestore(doc)).toList());
-  }
-
-  Future<List<Order>> fetchActive(String customerId) async {
-    final snapshot = await _orders
-        .where('customer_id', isEqualTo: customerId)
-        .orderBy('created_at', descending: true)
-        .get();
-
-    return snapshot.docs
-        .map((doc) => Order.fromFirestore(doc))
-        .where((o) => o.isActive)
-        .toList();
-  }
- 
-  Future<List<Order>> fetchPast(String customerId) async {
-    final snapshot = await _orders
-        .where('customer_id', isEqualTo: customerId)
-        .orderBy('created_at', descending: true)
-        .get();
-
-    return snapshot.docs
-        .map((doc) => Order.fromFirestore(doc))
-        .where((o) => !o.isActive)
-        .toList();
+    return orders;
   }
 }

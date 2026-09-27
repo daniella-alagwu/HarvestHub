@@ -4,114 +4,182 @@ class Product {
   const Product({
     required this.id,
     required this.farmerId,
-    required this.name,
-    required this.category,
+    required this.itemName,
     required this.pricePerUnit,
-    this.farmerName = 'Local Farmer',
-    this.marketName = 'Farmers Market',
-    this.unit = 'item',
-    this.stockQty = 0.0,
-    this.distanceMiles = 0.0,
+    required this.stockQty,
+    this.category,
     this.imageUrl,
+    this.unit = 'item',
     this.description = '',
     this.isOrganic = false,
+    this.farmerName = '',
+    this.marketName = '',
+    this.distanceMiles = 0,
   });
 
   final String id;
   final String farmerId;
-  final String farmerName;
-  final String marketName;
-  final String name;
-  final String category;
+  final String itemName;
   final double pricePerUnit;
-
- 
-  final String unit;
-  final double stockQty;
-  final double distanceMiles;
+  final int stockQty;
+  final String? category;
   final String? imageUrl;
+  final String unit;
   final String description;
   final bool isOrganic;
+  final String farmerName;
+  final String marketName;
+  final double distanceMiles;
 
-  
-
-  
+ 
   String get productId => id;
-  String get itemName => name;
+  String get name => itemName;
+  double get price => pricePerUnit;
+  int get quantity => stockQty;
+
+  String get priceLabel =>
+      '\$${pricePerUnit.toStringAsFixed(2)} / $unit';
 
   bool get isInStock => stockQty > 0;
-  bool get isLowStock => stockQty > 0 && stockQty <= 5;
 
-  String get priceLabel => '\$${pricePerUnit.toStringAsFixed(2)} / $unit';
-  String get distanceLabel => '${distanceMiles.toStringAsFixed(1)} mi';
+  String get distanceLabel => distanceMiles > 0
+      ? '${distanceMiles.toStringAsFixed(1)} mi'
+      : 'Local';
 
-
-  //parsing firestore docs
-  factory Product.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>? ?? {};
+  factory Product.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data() ?? const <String, dynamic>{};
 
     return Product(
       id: doc.id,
-      farmerId: data['farmer_id'] ?? data['farmerId'] ?? '',
-      farmerName: data['farmer_name'] ?? data['farmerName'] ?? 'Local Farmer',
-      marketName: data['market_name'] ?? data['marketName'] ?? 'Farmers Market',
-      name: data['item_name'] ?? data['name'] ?? data['itemName'] ?? '',
-      category: data['category'] ?? 'General',
-      pricePerUnit: (data['price_per_unit'] ?? data['pricePerUnit'] ?? 0.0).toDouble(),
-      unit: data['unit'] ?? 'item',
-      stockQty: (data['stock_qty'] ?? data['stockQty'] ?? 0.0).toDouble(),
-      distanceMiles: (data['distance_miles'] ?? data['distanceMiles'] ?? 0.0).toDouble(),
-      imageUrl: data['image_url'] ?? data['imageUrl'],
-      description: data['description'] ?? '',
-      isOrganic: data['is_organic'] ?? data['isOrganic'] ?? false,
+      farmerId: _asString(
+        data['farmer_id'] ?? data['farmerId'],
+      ),
+      itemName: _asString(
+        data['item_name'] ?? data['itemName'],
+      ),
+      pricePerUnit: _asDouble(
+        data['price_per_unit'] ??
+            data['pricePerUnit'] ??
+            data['price'],
+      ),
+      stockQty: _asInt(
+        data['stock_qty'] ??
+            data['stockQty'] ??
+            data['quantity'],
+      ),
+      category: _nullableString(data['category']),
+      imageUrl: _nullableString(
+        data['image_url'] ?? data['imageUrl'],
+      ),
+      unit: _asString(
+        data['unit'],
+        fallback: 'item',
+      ),
+      description: _asString(data['description']),
+      isOrganic: _asBool(
+        data['is_organic'] ?? data['isOrganic'],
+      ),
+      farmerName: _asString(
+        data['farmer_name'] ?? data['farmerName'],
+      ),
+      marketName: _asString(
+        data['market_name'] ?? data['marketName'],
+      ),
+      distanceMiles: _asDouble(
+        data['distance_miles'] ?? data['distanceMiles'],
+      ),
     );
   }
 
-  //conversion...
   Map<String, dynamic> toFirestore() {
     return {
       'farmer_id': farmerId,
-      'farmer_name': farmerName,
-      'market_name': marketName,
-      'item_name': name,
+      'item_name': itemName,
       'category': category,
       'price_per_unit': pricePerUnit,
-      'unit': unit,
       'stock_qty': stockQty,
-      'distance_miles': distanceMiles,
+      'unit': unit,
       'image_url': imageUrl,
       'description': description,
       'is_organic': isOrganic,
+      if (farmerName.trim().isNotEmpty)
+        'farmer_name': farmerName,
+      if (marketName.trim().isNotEmpty)
+        'market_name': marketName,
+      if (distanceMiles > 0)
+        'distance_miles': distanceMiles,
     };
   }
 
   Product copyWith({
     String? farmerName,
     String? marketName,
-    String? name,
-    String? category,
-    double? pricePerUnit,
-    String? unit,
-    double? stockQty,
     double? distanceMiles,
-    String? imageUrl,
     String? description,
+    String? category,
+    String? imageUrl,
+    String? unit,
     bool? isOrganic,
+    int? stockQty,
+    double? pricePerUnit,
   }) {
     return Product(
       id: id,
       farmerId: farmerId,
-      farmerName: farmerName ?? this.farmerName,
-      marketName: marketName ?? this.marketName,
-      name: name ?? this.name,
-      category: category ?? this.category,
+      itemName: itemName,
       pricePerUnit: pricePerUnit ?? this.pricePerUnit,
-      unit: unit ?? this.unit,
       stockQty: stockQty ?? this.stockQty,
-      distanceMiles: distanceMiles ?? this.distanceMiles,
+      category: category ?? this.category,
       imageUrl: imageUrl ?? this.imageUrl,
+      unit: unit ?? this.unit,
       description: description ?? this.description,
       isOrganic: isOrganic ?? this.isOrganic,
+      farmerName: farmerName ?? this.farmerName,
+      marketName: marketName ?? this.marketName,
+      distanceMiles: distanceMiles ?? this.distanceMiles,
     );
   }
+
+  static String _asString(
+    Object? value, {
+    String fallback = '',
+  }) {
+    if (value == null) return fallback;
+    return value.toString();
+  }
+
+  static String? _nullableString(Object? value) {
+    if (value == null) return null;
+
+    final string = value.toString();
+    return string.isEmpty ? null : string;
+  }
+
+  static double _asDouble(Object? value) {
+    if (value is num) return value.toDouble();
+
+    return double.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
+  }
+
+  static int _asInt(Object? value) {
+    if (value is num) return value.toInt();
+
+    return int.tryParse(
+          value?.toString() ?? '',
+        ) ??
+        0;
+  }
+
+  static bool _asBool(Object? value) {
+    if (value is bool) return value;
+
+    return value?.toString().toLowerCase() == 'true';
+  }
 }
+
+typedef ProductModel = Product;

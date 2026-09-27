@@ -8,6 +8,7 @@ import '../../../data/repositories/farmer_dashboard_repository.dart';
 import 'farmer_notifications_screen.dart';
 
 class FarmerDashboardScreen extends StatefulWidget {
+  static const String routeName = '/farmer-dashboard';
   const FarmerDashboardScreen({super.key});
 
   @override
@@ -117,7 +118,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     List<ProductModel> lowStock,
     int unreadCount,
   ) {
-    final sales = orders.fold<double>(0, (sum, o) => sum + o.totalPrice);
+    final sales = orders.fold<double>(0, (sum, o) => sum + o.total);
     final avgOrder = orders.isEmpty ? 0.0 : sales / orders.length;
     final recentOrders = orders.take(5).toList();
 

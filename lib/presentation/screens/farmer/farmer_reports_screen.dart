@@ -68,7 +68,7 @@ class _FarmerReportsScreenState extends State<FarmerReportsScreen> {
 
                   final totalOrders = periodOrders.length;
                   final revenue = periodOrders.fold<double>(0, (sum, o) => sum + o.totalPrice);
-                  final productsSold = periodOrders.fold<int>(0, (sum, o) => sum + o.itemQuantity);
+                  final productsSold = periodOrders.fold<int>(0, (sum, o) => sum + o.itemQuantity.toInt());
                   final avgOrderValue = totalOrders == 0 ? 0.0 : revenue / totalOrders;
 
                   return GridView.count(
