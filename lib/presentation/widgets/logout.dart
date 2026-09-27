@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:harvesthub/presentation/screens/splash/splash_screen.dart';
-import '../../data/repositories/auth_repository.dart';
+import '../../data/repositories/auth_service.dart'
 import '../theme/colors/app_colors.dart';
 import 'app_page_route.dart';
 

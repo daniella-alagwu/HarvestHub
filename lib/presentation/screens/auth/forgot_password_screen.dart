@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../data/repositories/auth_repository.dart';
+import '../../../data/repositories/auth_service.dart';
 import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
 import '../../widgets/app_text_field.dart';
@@ -16,7 +16,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
-  final _authRepository = AuthRepository();
+  final _authRepository = AuthService();
 
   bool _isSubmitting = false;
   bool _emailSent = false;

@@ -2,14 +2,112 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    function hasRole(role) {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
     match /users/{userId} {
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role in ['customer', 'farmer'];
+
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+
+      // A user may edit profile details, but role and account creation time are immutable.
+      allow update: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['name', 'email', 'phone', 'address', 'email_verified']);
+
+      allow delete: if isAdmin();
     }
 
     match /farmers/{farmerId} {
-      allow create: if request.auth != null && request.auth.uid == farmerId;
-      allow read, update: if request.auth != null && request.auth.uid == farmerId;
+      allow create: if signedIn()
+        && request.auth.uid == farmerId
+        && hasRole('farmer')
+        && request.resource.data.user_id == farmerId;
+
+      allow read: if true;
+
+      allow update: if signedIn()
+        && request.auth.uid == farmerId
+        && hasRole('farmer')
+        && request.resource.data.user_id == resource.data.user_id;
+
+      allow delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      // Customers and visitors can browse active listings.
+      allow read: if true;
+
+      allow create: if hasRole('farmer')
+        && request.resource.data.farmer_id == request.auth.uid
+        && request.resource.data.price_per_unit is number
+        && request.resource.data.price_per_unit >= 0
+        && request.resource.data.stock_qty is int
+        && request.resource.data.stock_qty >= 0;
+
+      allow update: if hasRole('farmer')
+        && resource.data.farmer_id == request.auth.uid
+        && request.resource.data.farmer_id == resource.data.farmer_id
+        && request.resource.data.price_per_unit is number
+        && request.resource.data.price_per_unit >= 0
+        && request.resource.data.stock_qty is int
+        && request.resource.data.stock_qty >= 0;
+
+      allow delete: if (hasRole('farmer') && resource.data.farmer_id == request.auth.uid)
+        || isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow create: if hasRole('customer')
+        && request.resource.data.customer_id == request.auth.uid
+        && request.resource.data.farmer_id is string
+        && request.resource.data.items_json is string
+        && request.resource.data.total_price is number
+        && request.resource.data.total_price >= 0
+        && request.resource.data.status == 'Pending'
+        && request.resource.data.keys().hasOnly([
+          'customer_id', 'farmer_id', 'items_json', 'pickup_slot_time',
+          'status', 'total_price', 'created_at'
+        ]);
+
+      allow read: if signedIn()
+        && (resource.data.customer_id == request.auth.uid
+          || resource.data.farmer_id == request.auth.uid
+          || isAdmin());
+
+      // Farmers can advance their own orders; customers can cancel their own pending order.
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.customer_id == resource.data.customer_id
+        && request.resource.data.farmer_id == resource.data.farmer_id
+        && ((resource.data.farmer_id == request.auth.uid
+              && hasRole('farmer')
+              && request.resource.data.status in [
+                'Confirmed', 'Ready for Pickup', 'Completed', 'Cancelled'
+              ])
+          || (resource.data.customer_id == request.auth.uid
+              && resource.data.status == 'Pending'
+              && request.resource.data.status == 'Cancelled')
+          || isAdmin());
+
+      allow delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../data/models/user_role.dart';
-import '../../../data/repositories/auth_repository.dart';
+import '../../../data/repositories/auth_service.dart';
 import '../../../data/static/location_data.dart';
 import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
@@ -34,7 +34,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _stateManual = TextEditingController();
   final _businessName = TextEditingController();
   final _farmLocation = TextEditingController();
-  final _authRepository = AuthRepository();
+  final _authRepository = AuthService();
 
   CountryInfo _phoneCountry = LocationData.defaultCountry;
 
