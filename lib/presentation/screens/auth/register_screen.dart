@@ -1,15 +1,20 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../data/models/user_role.dart';
+<<<<<<< HEAD
 import '../../../data/repositories/auth_service.dart';
+=======
+import '../../../data/repositories/auth_repository.dart';
+import '../../../data/static/country_code_picker.dart';
+import '../../../data/static/labeled_dropdown.dart';
+>>>>>>> e6a51967925228e613c59e472987444c8c21af43
 import '../../../data/static/location_data.dart';
+import '../../../data/static/searchable_dropdown.dart';
 import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
 import '../../widgets/app_page_route.dart';
 import '../../widgets/app_text_field.dart';
-import '../../../data/static/country_code_picker.dart';
-import '../../../data/static/labeled_dropdown.dart';
-import '../../../data/static/searchable_dropdown.dart';
+import '../customer/shell/customer_shell.dart';
 import '../home/home_screen.dart';
 import 'email_verification_screen.dart';
 
@@ -151,7 +156,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       } else {
         Navigator.of(context).pushReplacement(
-          AppPageRoute(page: HomeScreen(role: role)),
+          role == 'customer'
+              ? AppPageRoute(page: const CustomerShell())
+              : AppPageRoute(page: HomeScreen(role: role)),
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -284,7 +291,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              
                 const SizedBox(height: 16),
                 Text(
                   _isFarmer

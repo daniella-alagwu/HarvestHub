@@ -6,6 +6,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+<<<<<<< HEAD
     function isAdmin() {
       return signedIn() && request.auth.token.admin == true;
     }
@@ -108,6 +109,105 @@ service cloud.firestore {
 
     match /{document=**} {
       allow read, write: if false;
+=======
+    function currentUserRole() {
+      return signedIn()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : null;
+    }
+
+    function isFarmer() {
+      return signedIn() && currentUserRole() == 'farmer';
+    }
+
+    function isCustomer() {
+      return signedIn() && currentUserRole() == 'customer';
+    }
+
+    match /users/{userId} {
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow read, update: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /farmers/{farmerId} {
+      allow read: if signedIn();
+      allow create, update: if isFarmer() && request.auth.uid == farmerId;
+    }
+
+    match /farmers_market/{marketId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isFarmer();
+    }
+
+    match /products/{productId} {
+      allow read: if signedIn();
+
+      allow create: if isFarmer()
+        && request.resource.data.farmer_id == request.auth.uid;
+
+      allow update, delete: if isFarmer()
+        && resource.data.farmer_id == request.auth.uid;
+
+      allow update: if isCustomer()
+        && request.resource.data.diff(resource.data)
+            .affectedKeys()
+            .hasOnly(['stock_qty'])
+        && request.resource.data.stock_qty is int
+        && request.resource.data.stock_qty >= 0
+        && request.resource.data.stock_qty <= resource.data.stock_qty;
+    }
+
+    match /orders/{orderId} {
+      allow read: if signedIn()
+        && (
+          resource.data.customer_id == request.auth.uid ||
+          resource.data.farmer_id == request.auth.uid
+        );
+
+      allow create: if isCustomer()
+        && request.resource.data.customer_id == request.auth.uid;
+
+      // Customer may only change their pickup slot.
+      // Farmer may only change order status.
+      allow update: if signedIn() && (
+        (
+          resource.data.customer_id == request.auth.uid
+          && request.resource.data.customer_id == resource.data.customer_id
+          && request.resource.data.farmer_id == resource.data.farmer_id
+          && request.resource.data.diff(resource.data)
+              .affectedKeys()
+              .hasOnly(['pickup_slot_time'])
+        )
+        ||
+        (
+          isFarmer()
+          && resource.data.farmer_id == request.auth.uid
+          && request.resource.data.customer_id == resource.data.customer_id
+          && request.resource.data.farmer_id == resource.data.farmer_id
+          && request.resource.data.diff(resource.data)
+              .affectedKeys()
+              .hasOnly(['status'])
+        )
+      );
+    }
+
+    match /notifications/{notificationId} {
+      allow create: if isFarmer()
+        && request.resource.data.farmer_id == request.auth.uid;
+
+      allow read, update: if isFarmer()
+        && resource.data.farmer_id == request.auth.uid;
+    }
+
+    match /wishlists/{userId}/items/{productId} {
+      allow read, write: if signedIn()
+        && request.auth.uid == userId;
+    }
+
+    match /follows/{userId}/farmers/{farmerId} {
+      allow read, write: if signedIn()
+        && request.auth.uid == userId;
+>>>>>>> e6a51967925228e613c59e472987444c8c21af43
     }
   }
 }

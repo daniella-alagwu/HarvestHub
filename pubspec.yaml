@@ -31,6 +31,9 @@ dependencies:
   google_generative_ai: ^0.4.6
   # flutter_dotenv: ^5.2.1
 
+  # Media
+  image_picker: ^1.1.2
+ 
   # Notifications
   flutter_local_notifications: ^17.2.3
 

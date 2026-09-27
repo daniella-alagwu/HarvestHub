@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 
-enum OrderStatus { pending, confirmed, readyForPickup, completed, cancelled }
+enum OrderStatus { pending, confirmed, readyForPickup, completed, cancelled, rejected }
 
 class StatusColors {
   StatusColors._();
@@ -16,6 +16,9 @@ class StatusColors {
   /// payment / order pending
   static const Color pending = AppColors.warning;
 
+  /// payment / order rejected
+  static const Color rejected = AppColors.error;
+
   
   static Color colorFor(OrderStatus status) {
     switch (status) {
@@ -28,6 +31,8 @@ class StatusColors {
       case OrderStatus.completed:
         return success;
       case OrderStatus.cancelled:
+        return failure;
+      case OrderStatus.rejected:
         return failure;
     }
   }
@@ -45,6 +50,8 @@ class StatusColors {
         return 'Completed';
       case OrderStatus.cancelled:
         return 'Cancelled';
+      case OrderStatus.rejected:
+        return 'Rejected';
     }
   }
 }
