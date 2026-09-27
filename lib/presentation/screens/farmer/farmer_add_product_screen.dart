@@ -9,8 +9,6 @@ import '../../../data/repositories/farmer_dashboard_repository.dart';
 class FarmerAddProductScreen extends StatefulWidget {
   const FarmerAddProductScreen({super.key, this.existingProduct});
 
-  /// If provided, the screen opens in EDIT mode for this product.
-  /// If null, it's ADD mode (new product).
   final ProductModel? existingProduct;
 
   @override
@@ -168,11 +166,11 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Description is required' : null,
                 ),
                 const SizedBox(height: 16),
-                _buildLabel('Price per unit (\$)'),
+                _buildLabel('Price per unit (₦)'),
                 TextFormField(
                   controller: _priceController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: _inputDecoration('e.g. 4.80'),
+                  decoration: _inputDecoration('e.g. 4800'),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Price is required';
                     if (double.tryParse(v.trim()) == null) return 'Enter a valid number';

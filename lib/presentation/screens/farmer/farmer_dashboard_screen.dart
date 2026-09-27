@@ -5,6 +5,7 @@ import '../../../data/models/product_model.dart';
 import '../../../data/models/order_model.dart';
 import '../../../data/models/notification_model.dart';
 import '../../../data/repositories/farmer_dashboard_repository.dart';
+import '../auth/login_screen.dart';
 import 'farmer_notifications_screen.dart';
 
 class FarmerDashboardScreen extends StatefulWidget {
@@ -41,6 +42,33 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
       _farmName = profile['farmName'] ?? '';
       _loading = false;
     });
+  }
+
+  Future<void> _logout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Log out?'),
+        content: const Text('Are you sure you want to Logout?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Yes, Log out', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    await FirebaseAuth.instance.signOut();
+    if (!mounted) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   Color _statusColor(String status) {
@@ -93,7 +121,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
 
                 _repo.syncNotifications(
                   farmerId: _farmerId!,
-                  lowStockProducts: lowStock,
+                  allProducts: products,
                   pendingOrders: pendingOrders,
                 );
 
@@ -118,7 +146,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     List<ProductModel> lowStock,
     int unreadCount,
   ) {
-    final sales = orders.fold<double>(0, (sum, o) => sum + o.total);
+    final sales = orders.fold<double>(0, (sum, o) => sum + o.totalPrice);
     final avgOrder = orders.isEmpty ? 0.0 : sales / orders.length;
     final recentOrders = orders.take(5).toList();
 
@@ -137,17 +165,23 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
             mainAxisSpacing: 10,
             childAspectRatio: 1.7,
             children: [
-              _StatTile(label: 'Sales', value: '\$${sales.toStringAsFixed(2)}'),
+              _StatTile(label: 'Sales', value: '₦${sales.toStringAsFixed(2)}', accentColor: AppColors.autumnRust),
               _StatTile(label: 'Orders', value: '${orders.length}'),
-              _StatTile(label: 'Avg. order', value: '\$${avgOrder.toStringAsFixed(2)}'),
-              _StatTile(label: 'Products', value: '${products.length}'),
+              _StatTile(label: 'Avg. order', value: '₦${avgOrder.toStringAsFixed(2)}'),
+              _StatTile(label: 'Products', value: '${products.length}', accentColor: AppColors.earthySoil),
             ],
           ),
           const SizedBox(height: 16),
           if (lowStock.isNotEmpty) _buildLowStockBanner(lowStock),
           const SizedBox(height: 20),
-          Text('Recent orders',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+          Row(
+            children: [
+              Icon(Icons.local_florist_outlined, size: 16, color: AppColors.autumnRust),
+              const SizedBox(width: 6),
+              Text('Recent orders',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+            ],
+          ),
           const SizedBox(height: 10),
           if (recentOrders.isEmpty)
             Text('No orders yet.', style: TextStyle(fontSize: 13, color: AppColors.textMuted))
@@ -202,7 +236,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                   right: -4,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: AppColors.mainGreen, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(color: AppColors.autumnRust, shape: BoxShape.circle),
                     constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
                     child: Text(
                       '$unreadCount',
@@ -212,6 +246,19 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                   ),
                 ),
             ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        GestureDetector(
+          onTap: _logout,
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.logout, color: AppColors.textSecondary),
           ),
         ),
       ],
@@ -262,7 +309,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('\$${order.totalPrice.toStringAsFixed(2)}',
+              Text('₦${order.totalPrice.toStringAsFixed(2)}',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
               Text(order.status, style: TextStyle(fontSize: 12, color: _statusColor(order.status))),
             ],
@@ -274,9 +321,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
 }
 
 class _StatTile extends StatelessWidget {
-  const _StatTile({required this.label, required this.value});
+  const _StatTile({required this.label, required this.value, this.accentColor});
   final String label;
   final String value;
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
@@ -284,14 +332,22 @@ class _StatTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: accentColor?.withOpacity(0.35) ?? AppColors.border),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          Row(
+            children: [
+              if (accentColor != null) ...[
+                Container(width: 6, height: 6, decoration: BoxDecoration(color: accentColor, shape: BoxShape.circle)),
+                const SizedBox(width: 6),
+              ],
+              Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            ],
+          ),
           const SizedBox(height: 4),
           Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
         ],
