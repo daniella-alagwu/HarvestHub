@@ -9,6 +9,7 @@ import '../home/home_screen.dart';
 import 'email_verification_screen.dart';
 import 'forgot_password_screen.dart';
 import 'role_selection_screen.dart';
+import '../customer/shell/customer_shell.dart';
 import '../farmer/farmer_home_shell.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -52,7 +53,11 @@ class _LoginScreenState extends State<LoginScreen> {
     if (verified) {
       Navigator.of(context).pushReplacement(
         AppPageRoute(
-          page: role == 'farmer' ? const FarmerHomeShell() : HomeScreen(role: role),
+          page: role == 'customer'
+              ? const CustomerShell()
+              : role == 'farmer'
+                  ? const FarmerHomeShell()
+                  : HomeScreen(role: role),
         ),
       );
     } else {
