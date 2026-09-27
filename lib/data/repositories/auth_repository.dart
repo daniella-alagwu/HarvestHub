@@ -121,7 +121,7 @@ class AuthRepository {
     await _sendVerificationEmailSafely(credential.user!);
   }
 
-  Future<String> signInWithGoogle() async {
+  Future<String> signInWithGoogle({String intendedRole = 'customer'}) async {
     await _ensureGoogleSignInReady();
 
     final GoogleSignInAccount googleUser;
@@ -162,11 +162,29 @@ class AuthRepository {
     await _firestore.collection('users').doc(uid).set({
       'name': userCredential.user!.displayName ?? '',
       'email': userCredential.user!.email ?? '',
-      'role': 'customer',
+      'phone': '',
+      'role': intendedRole,
       'email_verified': userCredential.user!.emailVerified,
       'created_at': FieldValue.serverTimestamp(),
     });
-    return 'customer';
+
+    if (intendedRole == 'farmer') {
+      await _firestore.collection('farmers').doc(uid).set({
+        'user_id': uid,
+        'business_name': '',
+        'market_location': '',
+        'description': '',
+        'rating': 0.0,
+      });
+    }
+
+    return intendedRole;
+  }
+
+  Future<String?> fetchRoleFor(String uid) async {
+    final doc = await _firestore.collection('users').doc(uid).get();
+    if (!doc.exists) return null;
+    return (doc.data()?['role'] as String?) ?? 'customer';
   }
 
   Future<void> sendPasswordResetEmail({required String email}) async {

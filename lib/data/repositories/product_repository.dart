@@ -1,10 +1,152 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/product_model.dart';
 
-/// Reads from a local mock catalog today. Field names mirror the
-/// `products/{productId}` Firestore schema in PROJECT_BLUEPRINT.md §4,
-/// so swapping `_mockProducts` for a `cloud_firestore` query later is a
-/// drop-in change — screens/providers only ever see [Product].
 class ProductRepository {
+  ProductRepository({FirebaseFirestore? firestore})
+      : _firestore = firestore ?? FirebaseFirestore.instance;
+
+  final FirebaseFirestore _firestore;
+
+  CollectionReference<Map<String, dynamic>> get _products =>
+      _firestore.collection('products');
+
+  // ---------------------------------------------------------------------------
+  // WRITE & MANAGEMENT OPERATIONS (Farmer Management)
+  // ---------------------------------------------------------------------------
+
+  /// Adds a new product document to Firestore
+  Future<String> addProduct({
+    required String farmerId,
+    required String itemName,
+    required String category,
+    required double pricePerUnit,
+    required int stockQty,
+    String unit = 'item',
+    String imageUrl = '',
+    String description = '',
+    bool isOrganic = false,
+  }) async {
+    final doc = await _products.add({
+      'farmer_id': farmerId,
+      'item_name': itemName,
+      'category': category,
+      'price_per_unit': pricePerUnit,
+      'stock_qty': stockQty,
+      'unit': unit,
+      'image_url': imageUrl,
+      'description': description,
+      'is_organic': isOrganic,
+      'created_at': FieldValue.serverTimestamp(),
+    });
+    return doc.id;
+  }
+
+  /// Updates existing product fields in Firestore
+  Future<void> updateProduct(String productId, Map<String, dynamic> changes) {
+    return _products.doc(productId).update(changes);
+  }
+
+  /// Removes a product from the Firestore catalog
+  Future<void> deleteProduct(String productId) {
+    return _products.doc(productId).delete();
+  }
+
+  /// Directly updates stock quantity for rapid inventory adjustments
+  Future<void> updateStock(String productId, int stockQty) {
+    return _products.doc(productId).update({'stock_qty': stockQty});
+  }
+
+  // ---------------------------------------------------------------------------
+  // READ OPERATIONS & CUSTOMER UI FETCHERS
+  // ---------------------------------------------------------------------------
+
+  /// Fetches a single product by ID from Firestore, falling back to mock data
+  Future<Product?> fetchById(String productId) async {
+    try {
+      final doc = await _products.doc(productId).get();
+      if (doc.exists) {
+        return Product.fromFirestore(doc);
+      }
+    } catch (_) {
+      // Fallback on network or Firestore error
+    }
+
+    try {
+      return _mockProducts.firstWhere((p) => p.id == productId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Fetches all available products from Firestore, falling back to mock catalog
+  Future<List<Product>> fetchAll() async {
+    try {
+      final snapshot = await _products.get();
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList();
+      }
+    } catch (_) {
+      // Fallback to mock data if offline or collection empty
+    }
+    return List.unmodifiable(_mockProducts);
+  }
+
+  /// Fetches featured "Fresh Today" items
+  Future<List<Product>> fetchFreshToday() async {
+    try {
+      final snapshot = await _products
+          .where('stock_qty', isGreaterThan: 0)
+          .limit(4)
+          .get();
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList();
+      }
+    } catch (_) {
+      // Fallback to mock data
+    }
+    return _mockProducts.take(4).toList();
+  }
+
+  /// Extract distinct category list
+  List<String> get categories =>
+      _mockProducts.map((p) => p.category).toSet().toList()..sort();
+
+  // ---------------------------------------------------------------------------
+  // REAL-TIME FIRESTORE STREAMS
+  // ---------------------------------------------------------------------------
+
+  /// Real-time stream of products listed by a specific farmer
+  Stream<List<Product>> watchProductsForFarmer(String farmerId) {
+    return _products
+        .where('farmer_id', isEqualTo: farmerId)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList());
+  }
+
+  /// Real-time stream of all in-stock products
+  Stream<List<Product>> watchAvailableProducts() {
+    return _products
+        .where('stock_qty', isGreaterThan: 0)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList());
+  }
+
+  /// Real-time stream of in-stock products filtered by category
+  Stream<List<Product>> watchProductsByCategory(String category) {
+    return _products
+        .where('category', isEqualTo: category)
+        .where('stock_qty', isGreaterThan: 0)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList());
+  }
+
+  // ---------------------------------------------------------------------------
+  // MOCK CATALOG (Fallback / Seed Data)
+  // ---------------------------------------------------------------------------
+
   static final List<Product> _mockProducts = [
     const Product(
       id: 'p_heirloom_tomatoes',
@@ -122,22 +264,4 @@ class ProductRepository {
           'flavor good raw or cooked.',
     ),
   ];
-
-  Future<List<Product>> fetchAll() async {
-    return List.unmodifiable(_mockProducts);
-  }
-
-  Future<List<Product>> fetchFreshToday() async {
-    return _mockProducts.take(4).toList();
-  }
-
-  Future<Product?> fetchById(String id) async {
-    for (final product in _mockProducts) {
-      if (product.id == id) return product;
-    }
-    return null;
-  }
-
-  List<String> get categories =>
-      _mockProducts.map((p) => p.category).toSet().toList()..sort();
 }
