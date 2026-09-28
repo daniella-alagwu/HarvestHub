@@ -10,12 +10,10 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function isActiveAccount() {
-      return userData().get('active', true) == true;
-    }
-
     function hasRole(role) {
-      return signedIn() && userData().role == role && isActiveAccount();
+      return signedIn()
+        && userData().get('role', '') == role
+        && userData().get('active_status', true) == true;
     }
 
     function isAdmin() {
@@ -47,21 +45,27 @@ service cloud.firestore {
     match /users/{userId} {
       allow create: if signedIn()
         && request.auth.uid == userId
-        && request.resource.data.role in ['customer', 'farmer']
-        && request.resource.data.get('active', true) == true;
+        && request.resource.data.role in ['customer', 'farmer', 'admin']
+        && request.resource.data.get('active_status', true) == true;
 
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
-      
-      allow read: if isAdmin();
 
       allow update: if signedIn()
         && request.auth.uid == userId
-        && !changedKeys().hasAny(['role', 'active']);
+        && !changedKeys().hasAny(['role', 'active_status']);
 
       allow update: if isAdmin()
-        && changedKeys().hasOnly(['active'])
-        && request.resource.data.active is bool
-        && userId != request.auth.uid;
+        && !changedKeys().hasAny(['role'])
+        && request.resource.data.role == resource.data.role;
+
+      allow delete: if isAdmin();
+    }
+
+    match /admins/{adminId} {
+      allow read: if signedIn() && (request.auth.uid == adminId || isAdmin());
+      allow create: if signedIn() && request.auth.uid == adminId;
+      allow update: if isAdmin() && !changedKeys().hasAny(['user_id']);
+      allow delete: if isAdmin();
     }
 
     match /farmers/{farmerId} {
@@ -69,15 +73,16 @@ service cloud.firestore {
 
       allow create: if isFarmer()
         && request.auth.uid == farmerId
-        && request.resource.data.get('active', true) == true;
+        && request.resource.data.get('active_status', true) == true;
 
       allow update: if isFarmer()
         && request.auth.uid == farmerId
-        && !changedKeys().hasAny(['active', 'user_id']);
+        && !changedKeys().hasAny(['user_id', 'approval_status', 'active_status']);
 
       allow update: if isAdmin()
-        && changedKeys().hasOnly(['active'])
-        && request.resource.data.active is bool;
+        && !changedKeys().hasAny(['user_id']);
+
+      allow delete: if isAdmin();
     }
 
     match /farmers_market/{marketId} {
@@ -94,25 +99,16 @@ service cloud.firestore {
       allow read: if signedIn();
 
       allow create: if isFarmer()
-        && request.resource.data.farmer_id == request.auth.uid
-        && request.resource.data.get('active', true) == true;
+        && request.resource.data.farmer_id == request.auth.uid;
 
       allow update: if isFarmer()
         && resource.data.farmer_id == request.auth.uid
-        && !changedKeys().hasAny(['active', 'farmer_id']);
+        && !changedKeys().hasAny(['farmer_id']);
+
+      allow update: if isAdmin();
 
       allow delete: if isFarmer()
         && resource.data.farmer_id == request.auth.uid;
-
-      allow update: if isCustomer()
-        && changedKeys().hasOnly(['stock_qty'])
-        && request.resource.data.stock_qty is int
-        && request.resource.data.stock_qty >= 0
-        && request.resource.data.stock_qty <= resource.data.stock_qty;
-
-      allow update: if isAdmin()
-        && changedKeys().hasOnly(['active'])
-        && request.resource.data.active is bool;
 
       allow delete: if isAdmin();
     }
@@ -178,6 +174,27 @@ service cloud.firestore {
       allow read: if signedIn()
         && (resource.data.user_id == request.auth.uid || isAdmin());
 
+      allow update: if isAdmin()
+        && changedKeys().hasOnly(['status', 'reviewed_at', 'reviewed_by']);
+
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /app_content/{pageId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if signedIn()
+        && request.resource.data.admin_id == request.auth.uid;
+      allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
@@ -187,10 +204,6 @@ service cloud.firestore {
 
     match /follows/{userId}/farmers/{farmerId} {
       allow read, write: if signedIn() && request.auth.uid == userId;
-    }
-
-    match /admin/{document=**} {
-      allow read, write: if isAdmin();
     }
   }
 }
