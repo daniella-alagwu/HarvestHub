@@ -6,6 +6,8 @@ import '../screens/auth/role_selection_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/splash/animated_logo.dart';
 import '../theme/colors/app_colors.dart';
+import '../screens/customer/shell/customer_shell.dart';
+import '../screens/farmer/farmer_home_shell.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -59,6 +61,8 @@ class _AuthGateState extends State<AuthGate> {
               );
             }
 
+            if (role == 'customer') return const CustomerShell();
+            if (role == 'farmer') return const FarmerHomeShell();
             return HomeScreen(role: role);
           },
         );

@@ -13,6 +13,7 @@ import '../../widgets/app_text_field.dart';
 import '../customer/shell/customer_shell.dart';
 import '../home/home_screen.dart';
 import 'email_verification_screen.dart';
+import '../farmer/farmer_home_shell.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key, required this.role});
@@ -152,9 +153,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       } else {
         Navigator.of(context).pushReplacement(
-          role == 'customer'
+            role == 'customer'
               ? AppPageRoute(page: const CustomerShell())
-              : AppPageRoute(page: HomeScreen(role: role)),
+              : role == 'farmer'
+                  ? AppPageRoute(page: const FarmerHomeShell())
+                  : AppPageRoute(page: HomeScreen(role: role)),
         );
       }
     } on FirebaseAuthException catch (e) {
