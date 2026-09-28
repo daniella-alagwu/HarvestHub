@@ -11,7 +11,6 @@ import 'application/wishlist/wishlist_provider.dart';
 import 'application/orders/order_provider.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/screens/splash/splash_screen.dart';
-import 'presentation/widgets/auth_gate.dart';
 import 'presentation/screens/welcome/welcome_screen.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/role_selection_screen.dart';
@@ -57,7 +56,7 @@ class HarvestHubApp extends StatelessWidget {
         title: 'HarvestHub',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
-        home: const AuthGate(),
+        home: const SplashScreen(),
         routes: {
           SplashScreen.routeName: (context) => const SplashScreen(),
           WelcomeScreen.routeName: (context) => const WelcomeScreen(),
