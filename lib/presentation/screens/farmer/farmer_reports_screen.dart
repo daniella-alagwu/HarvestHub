@@ -45,7 +45,7 @@ class _FarmerReportsScreenState extends State<FarmerReportsScreen> {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: _buildAppBar(),
-        body: Center(child: Text('Not signed in.', style: TextStyle(color: AppColors.textSecondary))),
+        body: const Center(child: Text('Not signed in.', style: TextStyle(color: AppColors.textSecondary))),
       );
     }
 
@@ -80,9 +80,9 @@ class _FarmerReportsScreenState extends State<FarmerReportsScreen> {
                     childAspectRatio: 1.7,
                     children: [
                       _ReportTile(label: 'Total orders', value: '$totalOrders'),
-                      _ReportTile(label: 'Revenue', value: '\$${revenue.toStringAsFixed(2)}'),
-                      _ReportTile(label: 'Products sold', value: '$productsSold'),
-                      _ReportTile(label: 'Avg. order value', value: '\$${avgOrderValue.toStringAsFixed(2)}'),
+                      _ReportTile(label: 'Revenue', value: '₦${revenue.toStringAsFixed(2)}', valueColor: AppColors.autumnRust),
+                      _ReportTile(label: 'Products sold', value: '$productsSold', valueColor: AppColors.earthySoil),
+                      _ReportTile(label: 'Avg. order value', value: '₦${avgOrderValue.toStringAsFixed(2)}'),
                     ],
                   );
                 },
@@ -139,10 +139,11 @@ class _FarmerReportsScreenState extends State<FarmerReportsScreen> {
 }
 
 class _ReportTile extends StatelessWidget {
-  const _ReportTile({required this.label, required this.value});
+  const _ReportTile({required this.label, required this.value, this.valueColor});
 
   final String label;
   final String value;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -157,9 +158,9 @@ class _ReportTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
           const SizedBox(height: 4),
-          Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
         ],
       ),
     );

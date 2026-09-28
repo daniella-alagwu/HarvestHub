@@ -5,12 +5,10 @@ import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
 import '../../widgets/app_page_route.dart';
 import '../../widgets/app_text_field.dart';
-import '../home/home_screen.dart';
+import '../../widgets/role_router.dart';
 import 'email_verification_screen.dart';
 import 'forgot_password_screen.dart';
 import 'role_selection_screen.dart';
-import '../customer/shell/customer_shell.dart';
-import '../farmer/farmer_home_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -50,15 +48,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _routeAfterAuth(String role, {required String email}) {
     final verified = FirebaseAuth.instance.currentUser?.emailVerified ?? true;
-    if (verified) {
+    if (verified || !roleNeedsEmailVerification(role)) {
       Navigator.of(context).pushReplacement(
-        AppPageRoute(
-          page: role == 'customer'
-              ? const CustomerShell()
-              : role == 'farmer'
-                  ? const FarmerHomeShell()
-                  : HomeScreen(role: role),
-        ),
+        AppPageRoute(page: screenForRole(role)),
       );
     } else {
       Navigator.of(context).pushReplacement(
@@ -209,12 +201,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    Expanded(child: Divider(color: AppColors.border)),
+                    const Expanded(child: Divider(color: AppColors.border)),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Text('or', style: AppTextStyles.bodyMuted),
                     ),
-                    Expanded(child: Divider(color: AppColors.border)),
+                    const Expanded(child: Divider(color: AppColors.border)),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -222,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppColors.border),
+                      side: const BorderSide(color: AppColors.border),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
@@ -238,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             shape: BoxShape.circle,
                             border: Border.all(color: AppColors.textSecondary, width: 1),
                           ),
-                          child: Text(
+                          child: const Text(
                             'G',
                             style: TextStyle(
                               fontSize: 11,

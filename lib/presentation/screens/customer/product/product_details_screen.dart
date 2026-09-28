@@ -16,8 +16,7 @@ import '../../../widgets/product_image.dart';
 
 import '../farmer/farmer_profile_screen.dart';
 
-class ProductDetailsScreen
-    extends StatefulWidget {
+class ProductDetailsScreen extends StatefulWidget {
   const ProductDetailsScreen({
     super.key,
     required this.productId,
@@ -25,17 +24,13 @@ class ProductDetailsScreen
 
   final String productId;
 
-  static const routeName =
-      '/customer/product-details';
+  static const routeName = '/customer/product-details';
 
   @override
-  State<ProductDetailsScreen>
-      createState() =>
-          _ProductDetailsScreenState();
+  State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
 }
 
-class _ProductDetailsScreenState
-    extends State<ProductDetailsScreen> {
+class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   Product? _product;
   Farmer? _farmer;
 
@@ -49,11 +44,9 @@ class _ProductDetailsScreenState
   }
 
   Future<void> _load() async {
-    final provider =
-        context.read<ProductProvider>();
+    final provider = context.read<ProductProvider>();
 
-    final product =
-        await provider.productById(
+    final product = await provider.productById(
       widget.productId,
     );
 
@@ -85,17 +78,12 @@ class _ProductDetailsScreenState
     }
 
     setState(() {
-      final next =
-          _quantity + delta;
+      final next = _quantity + delta;
 
-      _quantity = (
-        next.clamp(
-          1,
-          product.stockQty <= 0
-              ? 1
-              : product.stockQty,
-        )
-      ).toDouble();
+      _quantity = (next.clamp(
+        1,
+        product.stockQty <= 0 ? 1 : product.stockQty,
+      )).toDouble();
     });
   }
 
@@ -105,8 +93,7 @@ class _ProductDetailsScreenState
   ) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor:
-            AppColors.background,
+        backgroundColor: AppColors.background,
         body: Center(
           child: CircularProgressIndicator(
             color: AppColors.mainGreen,
@@ -119,11 +106,9 @@ class _ProductDetailsScreenState
 
     if (product == null) {
       return Scaffold(
-        backgroundColor:
-            AppColors.background,
+        backgroundColor: AppColors.background,
         appBar: AppBar(
-          title:
-              const Text('Product'),
+          title: const Text('Product'),
         ),
         body: const Center(
           child: Text(
@@ -133,17 +118,14 @@ class _ProductDetailsScreenState
       );
     }
 
-    final wishlist =
-        context.watch<WishlistProvider>();
+    final wishlist = context.watch<WishlistProvider>();
 
-    final isWishlisted =
-        wishlist.isWishlisted(
+    final isWishlisted = wishlist.isWishlisted(
       product.id,
     );
 
     return Scaffold(
-      backgroundColor:
-          AppColors.background,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -154,21 +136,16 @@ class _ProductDetailsScreenState
                 children: [
                   Positioned.fill(
                     child: ProductImage(
-                      imageUrl:
-                          product.imageUrl,
-                      borderRadius:
-                          BorderRadius.zero,
+                      imageUrl: product.imageUrl,
+                      borderRadius: BorderRadius.zero,
                     ),
                   ),
                   Positioned(
                     top: 8,
                     left: 8,
-                    child:
-                        _CircleIconButton(
-                      icon:
-                          Icons.arrow_back,
-                      onTap: () =>
-                          Navigator.of(
+                    child: _CircleIconButton(
+                      icon: Icons.arrow_back,
+                      onTap: () => Navigator.of(
                         context,
                       ).maybePop(),
                     ),
@@ -176,31 +153,25 @@ class _ProductDetailsScreenState
                   Positioned(
                     top: 8,
                     right: 8,
-                    child:
-                        _CircleIconButton(
-                      icon: isWishlisted
-                          ? Icons.favorite
-                          : Icons.favorite_border,
+                    child: _CircleIconButton(
+                      icon:
+                          isWishlisted ? Icons.favorite : Icons.favorite_border,
                       iconColor: isWishlisted
                           ? AppColors.autumnRust
                           : AppColors.textPrimary,
-                      onTap: () => context
-                          .read<
-                              WishlistProvider>()
-                          .toggleWishlist(
-                        product.id,
-                      ),
+                      onTap: () =>
+                          context.read<WishlistProvider>().toggleWishlist(
+                                product.id,
+                              ),
                     ),
                   ),
                   if (product.isOrganic)
-                    Positioned(
+                    const Positioned(
                       left: 12,
                       bottom: 12,
                       child: _Badge(
-                        label:
-                            'ORGANIC',
-                        color:
-                            AppColors.mainGreen,
+                        label: 'ORGANIC',
+                        color: AppColors.mainGreen,
                       ),
                     ),
                   Positioned(
@@ -209,19 +180,13 @@ class _ProductDetailsScreenState
                     child: Text(
                       product.isInStock
                           ? '${product.stockQty.toStringAsFixed(0)} '
-                            '${product.unit} in stock'
+                              '${product.unit} in stock'
                           : 'Out of stock',
-                      style: AppTextStyles
-                          .caption
-                          .copyWith(
-                        color: product
-                                .isInStock
-                            ? AppColors
-                                .deepGreen
-                            : AppColors
-                                .error,
-                        fontWeight:
-                            FontWeight.w600,
+                      style: AppTextStyles.caption.copyWith(
+                        color: product.isInStock
+                            ? AppColors.deepGreen
+                            : AppColors.error,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -229,32 +194,26 @@ class _ProductDetailsScreenState
               ),
             ),
             Padding(
-              padding:
-                  const EdgeInsets.fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 16,
                 16,
                 16,
                 24,
               ),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     product.name,
-                    style: AppTextStyles
-                        .headingLarge,
+                    style: AppTextStyles.headingLarge,
                   ),
                   const SizedBox(
                     height: 4,
                   ),
                   Text(
                     product.priceLabel,
-                    style: AppTextStyles
-                        .headingMedium
-                        .copyWith(
-                      color:
-                          AppColors.deepGreen,
+                    style: AppTextStyles.headingMedium.copyWith(
+                      color: AppColors.deepGreen,
                     ),
                   ),
                   const SizedBox(
@@ -262,8 +221,7 @@ class _ProductDetailsScreenState
                   ),
                   Text(
                     product.description,
-                    style: AppTextStyles
-                        .bodyRegular,
+                    style: AppTextStyles.bodyRegular,
                   ),
                   const SizedBox(
                     height: 18,
@@ -279,16 +237,12 @@ class _ProductDetailsScreenState
                     Row(
                       children: [
                         _QuantityStepper(
-                          quantity:
-                              _quantity,
-                          unit:
-                              product.unit,
-                          onDecrement: () =>
-                              _changeQuantity(
+                          quantity: _quantity,
+                          unit: product.unit,
+                          onDecrement: () => _changeQuantity(
                             -1,
                           ),
-                          onIncrement: () =>
-                              _changeQuantity(
+                          onIncrement: () => _changeQuantity(
                             1,
                           ),
                         ),
@@ -296,23 +250,16 @@ class _ProductDetailsScreenState
                           width: 14,
                         ),
                         Expanded(
-                          child:
-                              PrimaryButton(
-                            label:
-                                'Add to cart • '
-                                '\$${(product.pricePerUnit * _quantity).toStringAsFixed(2)}',
+                          child: PrimaryButton(
+                            label: 'Add to cart • '
+                                '₦${(product.pricePerUnit * _quantity).toStringAsFixed(2)}',
                             onPressed: () {
-                              context
-                                  .read<
-                                      CartProvider>()
-                                  .addItem(
+                              context.read<CartProvider>().addItem(
                                     product,
-                                    quantity:
-                                        _quantity,
+                                    quantity: _quantity,
                                   );
 
-                              ScaffoldMessenger
-                                      .of(
+                              ScaffoldMessenger.of(
                                 context,
                               ).showSnackBar(
                                 SnackBar(
@@ -327,13 +274,10 @@ class _ProductDetailsScreenState
                       ],
                     )
                   else
-                    PrimaryButton(
-                      label:
-                          'Out of stock',
+                    const PrimaryButton(
+                      label: 'Out of stock',
                       onPressed: null,
-                      backgroundColor:
-                          AppColors
-                              .disabledGreen,
+                      backgroundColor: AppColors.disabledGreen,
                     ),
                 ],
               ),
@@ -345,8 +289,7 @@ class _ProductDetailsScreenState
   }
 }
 
-class _FarmerRow
-    extends StatelessWidget {
+class _FarmerRow extends StatelessWidget {
   const _FarmerRow({
     required this.farmer,
   });
@@ -357,11 +300,9 @@ class _FarmerRow
   Widget build(
     BuildContext context,
   ) {
-    final wishlist =
-        context.watch<WishlistProvider>();
+    final wishlist = context.watch<WishlistProvider>();
 
-    final isFollowing =
-        wishlist.isFollowing(
+    final isFollowing = wishlist.isFollowing(
       farmer.id,
     );
 
@@ -372,10 +313,8 @@ class _FarmerRow
             context,
           ).push(
             MaterialPageRoute(
-              builder: (_) =>
-                  FarmerProfileScreen(
-                farmerId:
-                    farmer.id,
+              builder: (_) => FarmerProfileScreen(
+                farmerId: farmer.id,
               ),
             ),
           ),
@@ -383,23 +322,19 @@ class _FarmerRow
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor:
-                    AppColors.softGreen,
-                backgroundImage:
-                    farmer.avatarUrl != null
-                        ? NetworkImage(
-                            farmer.avatarUrl!,
-                          )
-                        : null,
-                child:
-                    farmer.avatarUrl == null
-                        ? const Icon(
-                            Icons.agriculture,
-                            color: AppColors
-                                .mainGreen,
-                            size: 18,
-                          )
-                        : null,
+                backgroundColor: AppColors.softGreen,
+                backgroundImage: farmer.avatarUrl != null
+                    ? NetworkImage(
+                        farmer.avatarUrl!,
+                      )
+                    : null,
+                child: farmer.avatarUrl == null
+                    ? const Icon(
+                        Icons.agriculture,
+                        color: AppColors.mainGreen,
+                        size: 18,
+                      )
+                    : null,
               ),
               const SizedBox(
                 width: 10,
@@ -409,67 +344,50 @@ class _FarmerRow
         ),
         Expanded(
           child: GestureDetector(
-            onTap: () =>
-                Navigator.of(
+            onTap: () => Navigator.of(
               context,
             ).push(
               MaterialPageRoute(
-                builder: (_) =>
-                    FarmerProfileScreen(
-                  farmerId:
-                      farmer.id,
+                builder: (_) => FarmerProfileScreen(
+                  farmerId: farmer.id,
                 ),
               ),
             ),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   farmer.businessName,
-                  style: AppTextStyles
-                      .bodyRegular
-                      .copyWith(
-                    fontWeight:
-                        FontWeight.w600,
+                  style: AppTextStyles.bodyRegular.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
                   '${farmer.rating} ★ • '
                   '${farmer.followersCount} followers',
-                  style:
-                      AppTextStyles.caption,
+                  style: AppTextStyles.caption,
                 ),
               ],
             ),
           ),
         ),
         OutlinedButton(
-          onPressed: () => context
-              .read<WishlistProvider>()
-              .toggleFollow(
-            farmer.id,
-          ),
-          style:
-              OutlinedButton.styleFrom(
+          onPressed: () => context.read<WishlistProvider>().toggleFollow(
+                farmer.id,
+              ),
+          style: OutlinedButton.styleFrom(
             side: BorderSide(
-              color: isFollowing
-                  ? AppColors.mainGreen
-                  : AppColors.border,
+              color: isFollowing ? AppColors.mainGreen : AppColors.border,
             ),
-            foregroundColor: isFollowing
-                ? AppColors.mainGreen
-                : AppColors.textPrimary,
-            padding:
-                const EdgeInsets.symmetric(
+            foregroundColor:
+                isFollowing ? AppColors.mainGreen : AppColors.textPrimary,
+            padding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 8,
             ),
           ),
           child: Text(
-            isFollowing
-                ? 'Following'
-                : 'Follow',
+            isFollowing ? 'Following' : 'Follow',
           ),
         ),
       ],
@@ -477,8 +395,7 @@ class _FarmerRow
   }
 }
 
-class _QuantityStepper
-    extends StatelessWidget {
+class _QuantityStepper extends StatelessWidget {
   const _QuantityStepper({
     required this.quantity,
     required this.unit,
@@ -495,19 +412,16 @@ class _QuantityStepper
   Widget build(
     BuildContext context,
   ) {
-    final label =
-        quantity ==
-                quantity.roundToDouble()
-            ? quantity.toInt().toString()
-            : quantity.toStringAsFixed(1);
+    final label = quantity == quantity.roundToDouble()
+        ? quantity.toInt().toString()
+        : quantity.toStringAsFixed(1);
 
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
           color: AppColors.border,
         ),
-        borderRadius:
-            BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
@@ -516,16 +430,12 @@ class _QuantityStepper
               Icons.remove,
               size: 18,
             ),
-            onPressed:
-                onDecrement,
+            onPressed: onDecrement,
           ),
           Text(
             '$label $unit',
-            style: AppTextStyles
-                .bodyRegular
-                .copyWith(
-              fontWeight:
-                  FontWeight.w600,
+            style: AppTextStyles.bodyRegular.copyWith(
+              fontWeight: FontWeight.w600,
             ),
           ),
           IconButton(
@@ -533,8 +443,7 @@ class _QuantityStepper
               Icons.add,
               size: 18,
             ),
-            onPressed:
-                onIncrement,
+            onPressed: onIncrement,
           ),
         ],
       ),
@@ -542,8 +451,7 @@ class _QuantityStepper
   }
 }
 
-class _CircleIconButton
-    extends StatelessWidget {
+class _CircleIconButton extends StatelessWidget {
   const _CircleIconButton({
     required this.icon,
     required this.onTap,
@@ -563,25 +471,21 @@ class _CircleIconButton
       child: Container(
         width: 34,
         height: 34,
-        decoration:
-            const BoxDecoration(
+        decoration: const BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
         ),
         child: Icon(
           icon,
           size: 18,
-          color:
-              iconColor ??
-                  AppColors.textPrimary,
+          color: iconColor ?? AppColors.textPrimary,
         ),
       ),
     );
   }
 }
 
-class _Badge
-    extends StatelessWidget {
+class _Badge extends StatelessWidget {
   const _Badge({
     required this.label,
     required this.color,
@@ -595,24 +499,19 @@ class _Badge
     BuildContext context,
   ) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: 10,
         vertical: 5,
       ),
       decoration: BoxDecoration(
         color: color,
-        borderRadius:
-            BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         label,
-        style: AppTextStyles
-            .caption
-            .copyWith(
+        style: AppTextStyles.caption.copyWith(
           color: Colors.white,
-          fontWeight:
-              FontWeight.w700,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

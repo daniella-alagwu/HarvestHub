@@ -73,7 +73,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       onSelected: (_) => products.setCategory(category),
                       selectedColor: AppColors.mainGreen,
                       backgroundColor: AppColors.surface,
-                      side: BorderSide(color: AppColors.border),
+                      side: const BorderSide(color: AppColors.border),
                       labelStyle: AppTextStyles.caption.copyWith(
                         color: isSelected ? Colors.white : AppColors.textPrimary,
                       ),

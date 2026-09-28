@@ -31,20 +31,17 @@ class Product {
   final String marketName;
   final double distanceMiles;
 
- 
   String get productId => id;
   String get name => itemName;
   double get price => pricePerUnit;
   int get quantity => stockQty;
 
-  String get priceLabel =>
-      '\$${pricePerUnit.toStringAsFixed(2)} / $unit';
+  String get priceLabel => '₦${pricePerUnit.toStringAsFixed(2)} / $unit';
 
   bool get isInStock => stockQty > 0;
 
-  String get distanceLabel => distanceMiles > 0
-      ? '${distanceMiles.toStringAsFixed(1)} mi'
-      : 'Local';
+  String get distanceLabel =>
+      distanceMiles > 0 ? '${distanceMiles.toStringAsFixed(1)} mi' : 'Local';
 
   factory Product.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> doc,
@@ -60,14 +57,10 @@ class Product {
         data['item_name'] ?? data['itemName'],
       ),
       pricePerUnit: _asDouble(
-        data['price_per_unit'] ??
-            data['pricePerUnit'] ??
-            data['price'],
+        data['price_per_unit'] ?? data['pricePerUnit'] ?? data['price'],
       ),
       stockQty: _asInt(
-        data['stock_qty'] ??
-            data['stockQty'] ??
-            data['quantity'],
+        data['stock_qty'] ?? data['stockQty'] ?? data['quantity'],
       ),
       category: _nullableString(data['category']),
       imageUrl: _nullableString(
@@ -104,12 +97,9 @@ class Product {
       'image_url': imageUrl,
       'description': description,
       'is_organic': isOrganic,
-      if (farmerName.trim().isNotEmpty)
-        'farmer_name': farmerName,
-      if (marketName.trim().isNotEmpty)
-        'market_name': marketName,
-      if (distanceMiles > 0)
-        'distance_miles': distanceMiles,
+      if (farmerName.trim().isNotEmpty) 'farmer_name': farmerName,
+      if (marketName.trim().isNotEmpty) 'market_name': marketName,
+      if (distanceMiles > 0) 'distance_miles': distanceMiles,
     };
   }
 

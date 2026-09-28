@@ -13,10 +13,9 @@ class SearchableDropdown<T> extends FormField<T> {
     IconData? icon,
     String? hint,
     String searchHint = 'Search',
-    String? Function(T?)? validator,
+    super.validator,
   }) : super(
           initialValue: value,
-          validator: validator,
           builder: (state) {
             Future<void> open(BuildContext context) async {
               final result = await showModalBottomSheet<T>(
@@ -193,7 +192,7 @@ class _SearchSheetState<T> extends State<_SearchSheet<T>> {
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         itemCount: _filtered.length,
                         separatorBuilder: (_, __) =>
-                            Divider(height: 1, color: AppColors.border),
+                            const Divider(height: 1, color: AppColors.border),
                         itemBuilder: (context, i) {
                           final item = _filtered[i];
                           return ListTile(

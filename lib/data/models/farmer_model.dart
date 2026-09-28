@@ -15,6 +15,7 @@ class Farmer {
     this.followersCount = 0,
     this.productsCount = 0,
     this.avatarUrl,
+    this.farmImageUrl,
   });
 
   final String id;
@@ -30,44 +31,60 @@ class Farmer {
   final int followersCount;
   final int productsCount;
   final String? avatarUrl;
+  final String? farmImageUrl;
 
   String get distanceLabel => '${distanceMiles.toStringAsFixed(1)} mi';
 
   factory Farmer.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
 
+    String text(List<String> keys, {String fallback = ''}) {
+      for (final key in keys) {
+        final value = data[key];
+        if (value != null && value.toString().trim().isNotEmpty) {
+          return value.toString();
+        }
+      }
+      return fallback;
+    }
+
+    double number(List<String> keys) {
+      for (final key in keys) {
+        final value = data[key];
+        if (value is num) return value.toDouble();
+      }
+      return 0;
+    }
+
+    final avatar = text(['avatar_url', 'Avatar_Url', 'avatarUrl']);
+    final farmImage =
+        text(['farm_image_url', 'farmImageUrl', 'farm_photo_url']);
+
     return Farmer(
       id: doc.id,
-      userId: data['User_Id'] ?? data['userId'] ?? '',
-      marketId: data['Market_Id'] ?? data['marketId'] ?? '',
-      businessName: data['Business_Name'] ?? data['businessName'] ?? '',
-      marketName: data['Market_Name'] ?? data['marketName'] ?? 'Local Market',
-      rating: (data['Rating'] ?? data['rating'] ?? 0.0).toDouble(),
-      distanceMiles: (data['Distance_Miles'] ?? data['distanceMiles'] ?? 0.0).toDouble(),
-      description: data['Description'] ?? data['description'] ?? '',
-      tagline: data['Tagline'] ?? data['tagline'] ?? '',
-      marketDay: data['Market_Day'] ?? data['marketDay'] ?? '',
-      followersCount: (data['Followers_Count'] ?? data['followersCount'] ?? 0).toInt(),
-      productsCount: (data['Products_Count'] ?? data['productsCount'] ?? 0).toInt(),
-      avatarUrl: data['Avatar_Url'] ?? data['avatarUrl'],
+      userId: text(['user_id', 'User_Id', 'userId']),
+      marketId: text(['market_id', 'Market_Id', 'marketId']),
+      businessName: text(
+        ['business_name', 'Business_Name', 'businessName'],
+        fallback: 'Local farm',
+      ),
+      marketName: text(
+        ['market_name', 'Market_Name', 'marketName', 'market_location'],
+        fallback: 'Local Market',
+      ),
+      rating: number(['rating', 'Rating']),
+      distanceMiles:
+          number(['distance_miles', 'Distance_Miles', 'distanceMiles']),
+      description: text(['description', 'Description']),
+      tagline: text(['tagline', 'Tagline']),
+      marketDay: text(['market_day', 'Market_Day', 'marketDay']),
+      followersCount:
+          number(['followers_count', 'Followers_Count', 'followersCount'])
+              .toInt(),
+      productsCount:
+          number(['products_count', 'Products_Count', 'productsCount']).toInt(),
+      avatarUrl: avatar.isEmpty ? null : avatar,
+      farmImageUrl: farmImage.isEmpty ? null : farmImage,
     );
-  }
-
-  
-  Map<String, dynamic> toFirestore() {
-    return {
-      'User_Id': userId,
-      'Market_Id': marketId,
-      'Business_Name': businessName,
-      'Market_Name': marketName,
-      'Rating': rating,
-      'Distance_Miles': distanceMiles,
-      'Description': description,
-      'Tagline': tagline,
-      'Market_Day': marketDay,
-      'Followers_Count': followersCount,
-      'Products_Count': productsCount,
-      'Avatar_Url': avatarUrl,
-    };
   }
 }

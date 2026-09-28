@@ -210,7 +210,7 @@ class _ActiveOrderCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.wheatGold.withOpacity(0.22),
+                  color: AppColors.wheatGold.withValues(alpha: 0.22),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
