@@ -82,42 +82,72 @@ class _CustomerShellState
         index: _index,
         children: tabs,
       ),
-      floatingActionButton:
-          _index == 0
-              ? FloatingActionButton(
-                  backgroundColor:
-                      AppColors.wheatGold,
-                  onPressed: () =>
-                      Navigator.of(
-                    context,
-                  ).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          const AiAssistantScreen(),
+            floatingActionButton: _index == 0
+          ? GestureDetector(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AiAssistantScreen()),
+              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(28),
+                        topRight: Radius.circular(28),
+                        bottomLeft: Radius.circular(28),
+                        bottomRight: Radius.circular(6),
+                      ),
+                      border: Border.all(color: AppColors.autumnRust, width: 2.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.18),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/images/mascot/flora_avatar_160.png',
-                      width: 48,
-                      height: 48,
-                      fit: BoxFit.cover,
-                      errorBuilder:
-                          (
-                        context,
-                        error,
-                        stackTrace,
-                      ) =>
-                          const Icon(
-                        Icons
-                            .chat_bubble_outline,
-                        color:
-                            Colors.white,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
+                        bottomLeft: Radius.circular(24),
+                        bottomRight: Radius.circular(4),
+                      ),
+                      child: Image.asset(
+                        'assets/images/mascot/flora_avatar_160.png',
+                        width: 54,
+                        height: 54,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 54,
+                          height: 54,
+                          color: AppColors.softGreen,
+                          child: const Icon(Icons.support_agent,
+                              color: AppColors.mainGreen, size: 30),
+                        ),
                       ),
                     ),
                   ),
-                )
-              : null,
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: AppColors.wheatGold,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.chat_bubble_rounded,
+                          size: 14, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : null,
       bottomNavigationBar:
           NavigationBarTheme(
         data:
