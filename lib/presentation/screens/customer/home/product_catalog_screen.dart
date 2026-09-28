@@ -37,7 +37,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
     });
   }
 
-    final _userRepository = UserRepository();
+  final _userRepository = UserRepository();
   late final Stream<UserProfile?> _profileStream =
       _userRepository.watchCurrentUserProfile();
 
@@ -56,6 +56,11 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
   Widget build(BuildContext context) {
     final products = context.watch<ProductProvider>();
     final wishlistCount = context.watch<WishlistProvider>().wishlistCount;
+    final visibleProducts = products.selectedCategory == null
+        ? products.freshToday
+        : products.filteredProducts
+            .where((product) => product.isInStock)
+            .toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -77,7 +82,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                           style: AppTextStyles.caption,
                         ),
                         const SizedBox(height: 2),
-                                                StreamBuilder<UserProfile?>(
+                        StreamBuilder<UserProfile?>(
                           stream: _profileStream,
                           builder: (context, snapshot) {
                             return Text(
@@ -94,9 +99,11 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                     clipBehavior: Clip.none,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.favorite_border, color: AppColors.textPrimary),
+                        icon: const Icon(Icons.favorite_border,
+                            color: AppColors.textPrimary),
                         onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const WishlistScreen()),
+                          MaterialPageRoute(
+                              builder: (_) => const WishlistScreen()),
                         ),
                       ),
                       if (wishlistCount > 0)
@@ -109,7 +116,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                               color: AppColors.autumnRust,
                               shape: BoxShape.circle,
                             ),
-                            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                            constraints: const BoxConstraints(
+                                minWidth: 16, minHeight: 16),
                             child: Text(
                               '$wishlistCount',
                               textAlign: TextAlign.center,
@@ -142,10 +150,12 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
               if (products.isLoading)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: CircularProgressIndicator(color: AppColors.mainGreen)),
+                  child: Center(
+                      child: CircularProgressIndicator(
+                          color: AppColors.mainGreen)),
                 )
               else
-                  SizedBox(
+                SizedBox(
                   height: 92,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
@@ -159,7 +169,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                           farmer: farmer,
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => FarmerProfileScreen(farmerId: farmer.id),
+                              builder: (_) =>
+                                  FarmerProfileScreen(farmerId: farmer.id),
                             ),
                           ),
                         ),
@@ -168,13 +179,15 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                   ),
                 ),
               const SizedBox(height: 26),
-              const SectionHeader(title: 'Fresh today'),
+              const SectionHeader(
+                title: 'Fresh today',
+              ),
               const SizedBox(height: 12),
               if (!products.isLoading)
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: products.freshToday.length,
+                  itemCount: visibleProducts.length,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 16,
@@ -182,12 +195,13 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                     childAspectRatio: 0.72,
                   ),
                   itemBuilder: (context, index) {
-                    final product = products.freshToday[index];
+                    final product = visibleProducts[index];
                     return ProductCard(
                       product: product,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => ProductDetailsScreen(productId: product.id),
+                          builder: (_) =>
+                              ProductDetailsScreen(productId: product.id),
                         ),
                       ),
                     );

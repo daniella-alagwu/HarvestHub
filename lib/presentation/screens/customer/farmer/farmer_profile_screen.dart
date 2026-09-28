@@ -46,7 +46,8 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: AppColors.mainGreen)),
+        body: Center(
+            child: CircularProgressIndicator(color: AppColors.mainGreen)),
       );
     }
 
@@ -59,7 +60,8 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
       );
     }
 
-    final products = context.watch<ProductProvider>().productsByFarmer(farmer.id);
+    final products =
+        context.watch<ProductProvider>().productsByFarmer(farmer.id);
     final wishlist = context.watch<WishlistProvider>();
     final isFollowing = wishlist.isFollowing(farmer.id);
 
@@ -74,9 +76,12 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: AppColors.softGreen,
-                backgroundImage: farmer.avatarUrl != null ? NetworkImage(farmer.avatarUrl!) : null,
+                backgroundImage: farmer.avatarUrl != null
+                    ? NetworkImage(farmer.avatarUrl!)
+                    : null,
                 child: farmer.avatarUrl == null
-                    ? const Icon(Icons.agriculture, color: AppColors.mainGreen, size: 26)
+                    ? const Icon(Icons.agriculture,
+                        color: AppColors.mainGreen, size: 26)
                     : null,
               ),
               const SizedBox(width: 14),
@@ -84,7 +89,8 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(farmer.businessName, style: AppTextStyles.headingMedium),
+                    Text(farmer.businessName,
+                        style: AppTextStyles.headingMedium),
                     Text(
                       '${farmer.rating} ★ • ${farmer.followersCount} followers',
                       style: AppTextStyles.bodyMuted,
@@ -99,15 +105,32 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
             ],
           ),
           const SizedBox(height: 14),
+          if (farmer.farmImageUrl != null &&
+              farmer.farmImageUrl!.isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.network(
+                farmer.farmImageUrl!,
+                height: 180,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
           if (farmer.description.isNotEmpty) ...[
             Text(farmer.description, style: AppTextStyles.bodyRegular),
             const SizedBox(height: 14),
           ],
           OutlinedButton(
-            onPressed: () => context.read<WishlistProvider>().toggleFollow(farmer.id),
+            onPressed: () =>
+                context.read<WishlistProvider>().toggleFollow(farmer.id),
             style: OutlinedButton.styleFrom(
-              side: BorderSide(color: isFollowing ? AppColors.mainGreen : AppColors.border),
-              foregroundColor: isFollowing ? AppColors.mainGreen : AppColors.textPrimary,
+              side: BorderSide(
+                  color: isFollowing ? AppColors.mainGreen : AppColors.border),
+              foregroundColor:
+                  isFollowing ? AppColors.mainGreen : AppColors.textPrimary,
               minimumSize: const Size.fromHeight(44),
             ),
             child: Text(isFollowing ? 'Following' : 'Follow'),
@@ -116,7 +139,8 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
           Text('Products', style: AppTextStyles.headingMedium),
           const SizedBox(height: 12),
           if (products.isEmpty)
-            const EmptyState(icon: Icons.eco_outlined, title: 'No products listed yet')
+            const EmptyState(
+                icon: Icons.eco_outlined, title: 'No products listed yet')
           else
             GridView.builder(
               shrinkWrap: true,
@@ -133,7 +157,9 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
                 return ProductCard(
                   product: product,
                   onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => ProductDetailsScreen(productId: product.id)),
+                    MaterialPageRoute(
+                        builder: (_) =>
+                            ProductDetailsScreen(productId: product.id)),
                   ),
                 );
               },

@@ -3,8 +3,7 @@ import '../../data/models/farmer_model.dart';
 import '../theme/colors/app_colors.dart';
 import '../theme/text_styles.dart';
 
-/// Dark green horizontal card showing a nearby farmer — matches the
-/// "Nearby farmers" card on the Home screen.
+
 class NearbyFarmerCard extends StatelessWidget {
   const NearbyFarmerCard({super.key, required this.farmer, this.onTap});
 

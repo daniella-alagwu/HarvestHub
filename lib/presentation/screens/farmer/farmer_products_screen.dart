@@ -34,8 +34,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
           child: Text(
             'Not signed in.',
             style: TextStyle(
-              color: AppColors
-                  .textSecondary,
+              color: AppColors.textSecondary,
             ),
           ),
         ),
@@ -52,7 +51,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
             stream: _repo.streamProducts(_farmerId!),
             builder: (context, snap) {
               final products = snap.data ?? [];
-              final lowStock = products.where((product) => product.stockQty <= 5).length;
+              final lowStock =
+                  products.where((product) => product.stockQty <= 5).length;
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,8 +69,10 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
                           )
                         : ListView.separated(
                             itemCount: products.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 10),
-                            itemBuilder: (context, i) => _buildProductRow(products[i]),
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (context, i) =>
+                                _buildProductRow(products[i]),
                           ),
                   ),
                   const SizedBox(height: 10),
@@ -93,12 +95,15 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
         icon: const Icon(Icons.arrow_back, color: Colors.white),
         onPressed: onBackToOverview,
       ),
-      title: const Text('Inventory', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+      title: const Text('Inventory',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
       iconTheme: const IconThemeData(color: Colors.white),
       actions: [
         Container(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          decoration: BoxDecoration(color: AppColors.autumnRust, borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(
+              color: AppColors.autumnRust,
+              borderRadius: BorderRadius.circular(8)),
           child: IconButton(
             icon: const Icon(Icons.add, color: Colors.white),
             onPressed: () => _goToAddProduct(context),
@@ -126,7 +131,9 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
           child: _MiniStat(
             label: 'Low stock',
             value: '$lowStockCount',
-            noteColor: lowStockCount > 0 ? AppColors.wheatGold : AppColors.textSecondary,
+            noteColor: lowStockCount > 0
+                ? AppColors.wheatGold
+                : AppColors.textSecondary,
           ),
         ),
       ],
@@ -136,7 +143,9 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
   Widget _buildProductRow(ProductModel product) {
     final isOut = product.stockQty <= 0;
     final isLow = product.stockQty > 0 && product.stockQty <= 5;
-    final stockColor = isOut ? AppColors.error : (isLow ? AppColors.wheatGold : AppColors.textMuted);
+    final stockColor = isOut
+        ? AppColors.error
+        : (isLow ? AppColors.wheatGold : AppColors.textMuted);
     final stockLabel = isOut ? 'Out of stock' : '${product.stockQty} in stock';
 
     return Container(
@@ -157,16 +166,15 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
                 color: AppColors.softGreen,
                 borderRadius: BorderRadius.circular(8),
                 image: product.imageUrl?.isNotEmpty == true
-                    ? DecorationImage(image: NetworkImage(product.imageUrl!), fit: BoxFit.cover)
+                    ? DecorationImage(
+                        image: NetworkImage(product.imageUrl!),
+                        fit: BoxFit.cover)
                     : null,
               ),
-              child: product.imageUrl
-                          ?.isEmpty !=
-                      false
+              child: product.imageUrl?.isEmpty != false
                   ? const Icon(
                       Icons.eco_outlined,
-                      color:
-                          AppColors.mainGreen,
+                      color: AppColors.mainGreen,
                     )
                   : null,
             ),
@@ -182,26 +190,24 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
                     product.itemName,
                     style: const TextStyle(
                       fontSize: 13,
-                      fontWeight:
-                          FontWeight.w600,
-                      color: AppColors
-                          .textPrimary,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
                     ),
-                    overflow:
-                        TextOverflow
-                            .ellipsis,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    '\$${product.pricePerUnit.toStringAsFixed(2)}',
+                    '₦${product.pricePerUnit.toStringAsFixed(2)}',
                     style: const TextStyle(
                       fontSize: 11,
-                      color: AppColors
-                          .textSecondary,
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   Text(
                     stockLabel,
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: stockColor),
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: stockColor),
                   ),
                 ],
               ),
@@ -209,31 +215,24 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
           ),
           IconButton(
             icon: const Icon(
-              Icons
-                  .remove_circle_outline,
+              Icons.remove_circle_outline,
               size: 20,
-              color: AppColors
-                  .textSecondary,
+              color: AppColors.textSecondary,
             ),
-            onPressed:
-                product.stockQty > 0
-                    ? () =>
-                        _repo.adjustStock(
+            onPressed: product.stockQty > 0
+                ? () => _repo.adjustStock(
                       product.productId,
                       -1,
                     )
-                    : null,
+                : null,
           ),
           IconButton(
             icon: const Icon(
-              Icons
-                  .add_circle_outline,
+              Icons.add_circle_outline,
               size: 20,
-              color: AppColors
-                  .textSecondary,
+              color: AppColors.textSecondary,
             ),
-            onPressed: () =>
-                _repo.adjustStock(
+            onPressed: () => _repo.adjustStock(
               product.productId,
               1,
             ),
@@ -244,8 +243,7 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
               size: 18,
               color: AppColors.error,
             ),
-            onPressed: () =>
-                _confirmDelete(
+            onPressed: () => _confirmDelete(
               product,
             ),
           ),
@@ -259,29 +257,28 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove product?'),
-        content: Text('This will remove "${product.itemName}" from your listings.'),
+        content:
+            Text('This will remove "${product.itemName}" from your listings.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           TextButton(
-            onPressed: () =>
-                Navigator.pop(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(
               context,
               false,
             ),
-            child:
-                const Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () =>
-                Navigator.pop(
+            onPressed: () => Navigator.pop(
               context,
               true,
             ),
             child: const Text(
               'Remove',
               style: TextStyle(
-                color:
-                    AppColors.error,
+                color: AppColors.error,
               ),
             ),
           ),
@@ -305,7 +302,8 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
           backgroundColor: AppColors.deepGreen,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );
@@ -319,7 +317,9 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
 
   void _goToEditProduct(BuildContext context, ProductModel product) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => FarmerAddProductScreen(existingProduct: product)),
+      MaterialPageRoute(
+          builder: (context) =>
+              FarmerAddProductScreen(existingProduct: product)),
     );
   }
 }
@@ -347,8 +347,7 @@ class _MiniStat extends StatelessWidget {
             label,
             style: const TextStyle(
               fontSize: 12,
-              color: AppColors
-                  .textSecondary,
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(
@@ -356,7 +355,10 @@ class _MiniStat extends StatelessWidget {
           ),
           Text(
             value,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: noteColor ?? AppColors.textPrimary),
+            style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: noteColor ?? AppColors.textPrimary),
           ),
         ],
       ),

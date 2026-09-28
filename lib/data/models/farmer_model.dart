@@ -15,6 +15,7 @@ class Farmer {
     this.followersCount = 0,
     this.productsCount = 0,
     this.avatarUrl,
+    this.farmImageUrl,
   });
 
   final String id;
@@ -30,10 +31,11 @@ class Farmer {
   final int followersCount;
   final int productsCount;
   final String? avatarUrl;
+  final String? farmImageUrl;
 
   String get distanceLabel => '${distanceMiles.toStringAsFixed(1)} mi';
 
-    factory Farmer.fromFirestore(DocumentSnapshot doc) {
+  factory Farmer.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
 
     String text(List<String> keys, {String fallback = ''}) {
@@ -55,6 +57,8 @@ class Farmer {
     }
 
     final avatar = text(['avatar_url', 'Avatar_Url', 'avatarUrl']);
+    final farmImage =
+        text(['farm_image_url', 'farmImageUrl', 'farm_photo_url']);
 
     return Farmer(
       id: doc.id,
@@ -69,15 +73,18 @@ class Farmer {
         fallback: 'Local Market',
       ),
       rating: number(['rating', 'Rating']),
-      distanceMiles: number(['distance_miles', 'Distance_Miles', 'distanceMiles']),
+      distanceMiles:
+          number(['distance_miles', 'Distance_Miles', 'distanceMiles']),
       description: text(['description', 'Description']),
       tagline: text(['tagline', 'Tagline']),
       marketDay: text(['market_day', 'Market_Day', 'marketDay']),
       followersCount:
-          number(['followers_count', 'Followers_Count', 'followersCount']).toInt(),
+          number(['followers_count', 'Followers_Count', 'followersCount'])
+              .toInt(),
       productsCount:
           number(['products_count', 'Products_Count', 'productsCount']).toInt(),
       avatarUrl: avatar.isEmpty ? null : avatar,
+      farmImageUrl: farmImage.isEmpty ? null : farmImage,
     );
   }
 }

@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../data/models/user_role.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/static/country_code_picker.dart';
@@ -34,7 +37,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _stateManual = TextEditingController();
   final _businessName = TextEditingController();
   final _farmLocation = TextEditingController();
+  final _farmDescription = TextEditingController();
   final _authRepository = AuthRepository();
+  final ImagePicker _picker = ImagePicker();
+
+  Uint8List? _profileImageBytes;
+  Uint8List? _farmImageBytes;
 
   CountryInfo _phoneCountry = LocationData.defaultCountry;
 
@@ -47,8 +55,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool get _isFarmer => widget.role == UserRole.farmer;
   Color get _accent => _isFarmer ? AppColors.autumnRust : AppColors.mainGreen;
-  Color get _accentTint =>
-      _isFarmer ? AppColors.autumnRust.withValues(alpha: 0.12) : AppColors.softGreen;
+  Color get _accentTint => _isFarmer
+      ? AppColors.autumnRust.withValues(alpha: 0.12)
+      : AppColors.softGreen;
 
   @override
   void dispose() {
@@ -59,7 +68,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _stateManual.dispose();
     _businessName.dispose();
     _farmLocation.dispose();
+    _farmDescription.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage(
+      {required void Function(Uint8List bytes) onSelected}) async {
+    final picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+    if (picked == null) return;
+
+    final bytes = await picked.readAsBytes();
+    onSelected(bytes);
   }
 
   void _showSnack(String message, {required bool success}) {
@@ -101,6 +123,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isSubmitting = true);
     try {
       if (_isFarmer) {
+        final description = _farmDescription.text.trim();
+        if (description.isEmpty) {
+          _showSnack('Please describe your farm before continuing.',
+              success: false);
+          return;
+        }
+        if (_profileImageBytes == null) {
+          _showSnack('Please upload a profile picture for your farm.',
+              success: false);
+          return;
+        }
+        if (_farmImageBytes == null) {
+          _showSnack('Please upload a photo of your farm.', success: false);
+          return;
+        }
+
         await _authRepository.registerFarmer(
           fullName: _fullName.text,
           email: _email.text,
@@ -108,6 +146,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           password: _password.text,
           businessName: _businessName.text,
           marketLocation: _farmLocation.text,
+          description: description,
+          profileImageBytes: _profileImageBytes,
+          farmImageBytes: _farmImageBytes,
         );
       } else {
         await _authRepository.registerCustomer(
@@ -143,7 +184,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       if (!mounted) return;
       final user = FirebaseAuth.instance.currentUser;
-      if (user != null && !user.emailVerified && roleNeedsEmailVerification(role)) {
+      if (user != null &&
+          !user.emailVerified &&
+          roleNeedsEmailVerification(role)) {
         Navigator.of(context).pushReplacement(
           AppPageRoute(
             page: EmailVerificationScreen(email: user.email ?? '', role: role),
@@ -164,6 +207,63 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  Widget _imagePickerCard({
+    required String title,
+    required String hint,
+    required Uint8List? imageBytes,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 140,
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 18),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(14),
+          image: imageBytes != null
+              ? DecorationImage(
+                  image: MemoryImage(imageBytes),
+                  fit: BoxFit.cover,
+                )
+              : null,
+        ),
+        child: imageBytes == null
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_photo_alternate_outlined,
+                      color: _accent, size: 28),
+                  const SizedBox(height: 10),
+                  Text(
+                    title,
+                    style: AppTextStyles.bodyRegular.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(hint, style: AppTextStyles.bodyMuted),
+                ],
+              )
+            : Align(
+                alignment: Alignment.bottomRight,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.edit, color: Colors.white, size: 18),
+                ),
+              ),
+      ),
+    );
   }
 
   Widget _phoneField() {
@@ -326,6 +426,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     validator: (v) => (v == null || v.trim().isEmpty)
                         ? 'Location is required'
                         : null,
+                  ),
+                  AppTextField(
+                    label: 'Farm Description',
+                    hint:
+                        'Tell customers about your farm, produce, and values.',
+                    controller: _farmDescription,
+                    icon: Icons.description_outlined,
+                    maxLines: 4,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Farm description is required'
+                        : null,
+                  ),
+                  Text(
+                    'Profile Photo',
+                    style: AppTextStyles.bodyRegular.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _imagePickerCard(
+                    title: 'Upload profile picture',
+                    hint: 'Your face or brand logo',
+                    imageBytes: _profileImageBytes,
+                    onTap: () => _pickImage(
+                      onSelected: (bytes) =>
+                          setState(() => _profileImageBytes = bytes),
+                    ),
+                  ),
+                  Text(
+                    'Farm Photo',
+                    style: AppTextStyles.bodyRegular.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _imagePickerCard(
+                    title: 'Upload farm photo',
+                    hint: 'A clear photo of your farm',
+                    imageBytes: _farmImageBytes,
+                    onTap: () => _pickImage(
+                      onSelected: (bytes) =>
+                          setState(() => _farmImageBytes = bytes),
+                    ),
                   ),
                 ],
                 AppTextField(

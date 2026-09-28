@@ -6,6 +6,18 @@ import '../../theme/colors/app_colors.dart';
 import '../../../data/models/product_model.dart';
 import '../../../data/repositories/farmer_dashboard_repository.dart';
 
+const List<String> _productCategories = [
+  'Vegetables',
+  'Fruits',
+  'Bakery',
+  'Dairy',
+  'Tubers & Roots',
+  'Grains & Cereals',
+  'Oil & Oilseeds',
+  'Spices',
+  'Legumes & Pulses',
+];
+
 class FarmerAddProductScreen extends StatefulWidget {
   const FarmerAddProductScreen({super.key, this.existingProduct});
 
@@ -25,6 +37,7 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
   final _picker = ImagePicker();
 
   Uint8List? _newImageBytes;
+  String? _selectedCategory;
   bool _isSubmitting = false;
 
   bool get _isEditing => widget.existingProduct != null;
@@ -35,8 +48,11 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
     final p = widget.existingProduct;
     _nameController = TextEditingController(text: p?.itemName ?? '');
     _descriptionController = TextEditingController(text: p?.description ?? '');
-    _priceController = TextEditingController(text: p != null ? p.pricePerUnit.toString() : '');
-    _stockController = TextEditingController(text: p != null ? p.stockQty.toString() : '');
+    _priceController =
+        TextEditingController(text: p != null ? p.pricePerUnit.toString() : '');
+    _stockController =
+        TextEditingController(text: p != null ? p.stockQty.toString() : '');
+    _selectedCategory = p?.category ?? _productCategories.first;
   }
 
   @override
@@ -49,7 +65,8 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
   }
 
   Future<void> _pickImage() async {
-    final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final picked =
+        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (picked == null) return;
     final bytes = await picked.readAsBytes();
     setState(() => _newImageBytes = bytes);
@@ -61,6 +78,17 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
+    final category = _selectedCategory?.trim();
+    if (category == null || category.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please choose a product category.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
     try {
       if (_isEditing) {
@@ -68,6 +96,7 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
           productId: widget.existingProduct!.productId,
           farmerId: uid,
           itemName: _nameController.text.trim(),
+          category: category,
           description: _descriptionController.text.trim(),
           pricePerUnit: double.parse(_priceController.text.trim()),
           stockQty: int.parse(_stockController.text.trim()),
@@ -78,6 +107,7 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
         await _repo.addProduct(
           farmerId: uid,
           itemName: _nameController.text.trim(),
+          category: category,
           description: _descriptionController.text.trim(),
           pricePerUnit: double.parse(_priceController.text.trim()),
           stockQty: int.parse(_stockController.text.trim()),
@@ -89,7 +119,9 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not save product: $e'), backgroundColor: AppColors.error),
+        SnackBar(
+            content: Text('Could not save product: $e'),
+            backgroundColor: AppColors.error),
       );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -105,7 +137,8 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: Text(_isEditing ? 'Edit product' : 'Add product', style: const TextStyle(color: AppColors.textPrimary)),
+        title: Text(_isEditing ? 'Edit product' : 'Add product',
+            style: const TextStyle(color: AppColors.textPrimary)),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: SafeArea(
@@ -125,18 +158,26 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
                       color: AppColors.softGreen,
                       borderRadius: BorderRadius.circular(12),
                       image: _newImageBytes != null
-                          ? DecorationImage(image: MemoryImage(_newImageBytes!), fit: BoxFit.cover)
+                          ? DecorationImage(
+                              image: MemoryImage(_newImageBytes!),
+                              fit: BoxFit.cover)
                           : (existingImageUrl.isNotEmpty
-                              ? DecorationImage(image: NetworkImage(existingImageUrl), fit: BoxFit.cover)
+                              ? DecorationImage(
+                                  image: NetworkImage(existingImageUrl),
+                                  fit: BoxFit.cover)
                               : null),
                     ),
                     child: (_newImageBytes == null && existingImageUrl.isEmpty)
                         ? const Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.add_a_photo_outlined, color: AppColors.deepGreen, size: 28),
+                              Icon(Icons.add_a_photo_outlined,
+                                  color: AppColors.deepGreen, size: 28),
                               SizedBox(height: 8),
-                              Text('Tap to add a photo', style: TextStyle(color: AppColors.deepGreen, fontSize: 13)),
+                              Text('Tap to add a photo',
+                                  style: TextStyle(
+                                      color: AppColors.deepGreen,
+                                      fontSize: 13)),
                             ],
                           )
                         : Align(
@@ -144,8 +185,11 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
                             child: Container(
                               margin: const EdgeInsets.all(8),
                               padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                              child: const Icon(Icons.edit, color: Colors.white, size: 16),
+                              decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle),
+                              child: const Icon(Icons.edit,
+                                  color: Colors.white, size: 16),
                             ),
                           ),
                   ),
@@ -155,25 +199,52 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
                 TextFormField(
                   controller: _nameController,
                   decoration: _inputDecoration('e.g. Heirloom Tomatoes'),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Product name is required' : null,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Product name is required'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                _buildLabel('Category'),
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: _inputDecoration('Select a category'),
+                  items: _productCategories
+                      .map(
+                        (category) => DropdownMenuItem(
+                          value: category,
+                          child: Text(category),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) =>
+                      setState(() => _selectedCategory = value),
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Category is required'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 _buildLabel('Description'),
                 TextFormField(
                   controller: _descriptionController,
                   maxLines: 3,
-                  decoration: _inputDecoration('Short description of the product'),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Description is required' : null,
+                  decoration:
+                      _inputDecoration('Short description of the product'),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Description is required'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 _buildLabel('Price per unit (₦)'),
                 TextFormField(
                   controller: _priceController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   decoration: _inputDecoration('e.g. 4800'),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Price is required';
-                    if (double.tryParse(v.trim()) == null) return 'Enter a valid number';
+                    if (v == null || v.trim().isEmpty)
+                      return 'Price is required';
+                    if (double.tryParse(v.trim()) == null)
+                      return 'Enter a valid number';
                     return null;
                   },
                 ),
@@ -184,8 +255,10 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
                   keyboardType: TextInputType.number,
                   decoration: _inputDecoration('e.g. 20'),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Stock quantity is required';
-                    if (int.tryParse(v.trim()) == null) return 'Enter a whole number';
+                    if (v == null || v.trim().isEmpty)
+                      return 'Stock quantity is required';
+                    if (int.tryParse(v.trim()) == null)
+                      return 'Enter a whole number';
                     return null;
                   },
                 ),
@@ -198,16 +271,19 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
                       backgroundColor: AppColors.mainGreen,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                     child: _isSubmitting
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
                           )
                         : Text(_isEditing ? 'Save changes' : 'Add product',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                            style: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
@@ -221,7 +297,11 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+      child: Text(text,
+          style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary)),
     );
   }
 
@@ -232,9 +312,15 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
       filled: true,
       fillColor: AppColors.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.border)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.mainGreen, width: 1.4)),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.border)),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.border)),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.mainGreen, width: 1.4)),
     );
   }
 }

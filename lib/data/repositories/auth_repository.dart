@@ -1,8 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+
+import '../services/cloudinary_service.dart';
 
 class AuthRepository {
   AuthRepository({
@@ -16,6 +20,7 @@ class AuthRepository {
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
   final GoogleSignIn _googleSignIn;
+  final CloudinaryService _cloudinary = CloudinaryService();
 
   bool _googleSignInReady = false;
 
@@ -93,6 +98,9 @@ class AuthRepository {
     required String password,
     required String businessName,
     required String marketLocation,
+    required String description,
+    Uint8List? profileImageBytes,
+    Uint8List? farmImageBytes,
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email.trim(),
@@ -101,11 +109,21 @@ class AuthRepository {
 
     final uid = credential.user!.uid;
 
+    final profileImageUrl = profileImageBytes != null
+        ? await _cloudinary.uploadImage(profileImageBytes,
+            filename: 'profile_$uid.jpg')
+        : '';
+    final farmImageUrl = farmImageBytes != null
+        ? await _cloudinary.uploadImage(farmImageBytes,
+            filename: 'farm_$uid.jpg')
+        : '';
+
     await _firestore.collection('users').doc(uid).set({
       'name': fullName,
       'email': email.trim(),
       'phone': phone,
       'role': 'farmer',
+      'avatar_url': profileImageUrl,
       'email_verified': false,
       'created_at': FieldValue.serverTimestamp(),
     });
@@ -114,7 +132,9 @@ class AuthRepository {
       'user_id': uid,
       'business_name': businessName,
       'market_location': marketLocation,
-      'description': '',
+      'description': description.trim(),
+      'avatar_url': profileImageUrl,
+      'farm_image_url': farmImageUrl,
       'rating': 0.0,
     });
 
@@ -214,6 +234,8 @@ class AuthRepository {
         'business_name': '',
         'market_location': '',
         'description': '',
+        'avatar_url': '',
+        'farm_image_url': '',
         'rating': 0.0,
       });
     }
