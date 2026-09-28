@@ -1,15 +1,15 @@
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
+import '../services/cloudinary_service.dart';
 import '../models/product_model.dart';
 import '../models/order_model.dart';
 import '../models/notification_model.dart';
 
 class FarmerDashboardRepository {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final CloudinaryService _cloudinary = CloudinaryService();
 
   String getFarmerId(String uid) => uid;
 
@@ -28,7 +28,8 @@ class FarmerDashboardRepository {
         .collection('products')
         .where('farmer_id', isEqualTo: farmerId)
         .snapshots()
-        .map((snap) => snap.docs.map((doc) => ProductModel.fromFirestore(doc)).toList());
+        .map((snap) =>
+            snap.docs.map((doc) => ProductModel.fromFirestore(doc)).toList());
   }
 
   Stream<List<OrderModel>> streamOrders(String farmerId) {
@@ -36,12 +37,14 @@ class FarmerDashboardRepository {
         .collection('orders')
         .where('farmer_id', isEqualTo: farmerId)
         .snapshots()
-        .map((snap) => snap.docs.map((doc) => OrderModel.fromFirestore(doc)).toList());
+        .map((snap) =>
+            snap.docs.map((doc) => OrderModel.fromFirestore(doc)).toList());
   }
 
   Future<void> addProduct({
     required String farmerId,
     required String itemName,
+    required String category,
     required String description,
     required double pricePerUnit,
     required int stockQty,
@@ -50,21 +53,14 @@ class FarmerDashboardRepository {
     String imageUrl = '';
 
     if (imageBytes != null) {
-      final ref = _storage
-          .ref()
-          .child('product_images')
-          .child(farmerId)
-          .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-      await ref.putData(imageBytes, SettableMetadata(contentType: 'image/jpeg'));
-      imageUrl = await ref.getDownloadURL();
+      imageUrl = await _cloudinary.uploadImage(imageBytes);
     }
 
     await _db.collection('products').add({
       'farmer_id': farmerId,
       'item_name': itemName,
       'description': description,
-      'category': '',
+      'category': category,
       'price_per_unit': pricePerUnit,
       'stock_qty': stockQty,
       'image_url': imageUrl,
@@ -76,6 +72,7 @@ class FarmerDashboardRepository {
     required String productId,
     required String farmerId,
     required String itemName,
+    required String category,
     required String description,
     required double pricePerUnit,
     required int stockQty,
@@ -85,19 +82,13 @@ class FarmerDashboardRepository {
     String imageUrl = existingImageUrl ?? '';
 
     if (newImageBytes != null) {
-      final ref = _storage
-          .ref()
-          .child('product_images')
-          .child(farmerId)
-          .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-      await ref.putData(newImageBytes, SettableMetadata(contentType: 'image/jpeg'));
-      imageUrl = await ref.getDownloadURL();
+      imageUrl = await _cloudinary.uploadImage(newImageBytes);
     }
 
     await _db.collection('products').doc(productId).update({
       'item_name': itemName,
       'description': description,
+      'category': category,
       'price_per_unit': pricePerUnit,
       'stock_qty': stockQty,
       'image_url': imageUrl,
@@ -128,7 +119,9 @@ class FarmerDashboardRepository {
         .where('farmer_id', isEqualTo: farmerId)
         .orderBy('created_at', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map((doc) => NotificationModel.fromFirestore(doc)).toList());
+        .map((snap) => snap.docs
+            .map((doc) => NotificationModel.fromFirestore(doc))
+            .toList());
   }
 
   /// Creates a notification doc only if one doesn't already exist for this
@@ -181,7 +174,8 @@ class FarmerDashboardRepository {
           farmerId: farmerId,
           type: 'low_stock',
           title: 'Running low',
-          message: '${product.itemName} is down to just ${product.stockQty} left — might be time to top it up!',
+          message:
+              '${product.itemName} is down to just ${product.stockQty} left — might be time to top it up!',
         );
       } else if (product.stockQty <= 10) {
         await _ensureNotification(
@@ -189,7 +183,8 @@ class FarmerDashboardRepository {
           farmerId: farmerId,
           type: 'low_stock',
           title: 'Stock update',
-          message: 'Heads up! ${product.itemName} has ${product.stockQty} left in stock.',
+          message:
+              'Heads up! ${product.itemName} has ${product.stockQty} left in stock.',
         );
       }
     }
@@ -219,7 +214,8 @@ class FarmerDashboardRepository {
     required List<OrderModel> pendingOrders,
   }) async {
     await _syncStockNotifications(farmerId: farmerId, products: allProducts);
-    await _syncOrderNotifications(farmerId: farmerId, pendingOrders: pendingOrders);
+    await _syncOrderNotifications(
+        farmerId: farmerId, pendingOrders: pendingOrders);
   }
 
   Future<void> setNotificationRead(String notificationId, bool isRead) async {

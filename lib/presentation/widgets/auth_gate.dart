@@ -3,11 +3,9 @@ import 'package:flutter/material.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../screens/auth/email_verification_screen.dart';
 import '../screens/auth/role_selection_screen.dart';
-import '../screens/home/home_screen.dart';
 import '../screens/splash/animated_logo.dart';
 import '../theme/colors/app_colors.dart';
-import '../screens/customer/shell/customer_shell.dart';
-import '../screens/farmer/farmer_home_shell.dart';
+import 'role_router.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -54,16 +52,14 @@ class _AuthGateState extends State<AuthGate> {
               return const RoleSelectionScreen();
             }
 
-            if (!user.emailVerified) {
+            if (!user.emailVerified && roleNeedsEmailVerification(role)) {
               return EmailVerificationScreen(
                 email: user.email ?? '',
                 role: role,
               );
             }
 
-            if (role == 'customer') return const CustomerShell();
-            if (role == 'farmer') return const FarmerHomeShell();
-            return HomeScreen(role: role);
+            return screenForRole(role);
           },
         );
       },

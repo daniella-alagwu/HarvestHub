@@ -188,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: _ProductCard(
                         title: 'Heirloom Tomatoes',
                         farm: 'Maple Row Farm',
-                        price: '\$4.80 / lb',
+                        price: '₦4,800.00 / lb',
                         icon: Icons.grass,
                       ),
                     ),
@@ -197,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: _ProductCard(
                         title: 'Garden Kale',
                         farm: 'Maple Row Farm',
-                        price: '\$3.25 / bunch',
+                        price: '₦3,250.00 / bunch',
                         icon: Icons.eco,
                       ),
                     ),

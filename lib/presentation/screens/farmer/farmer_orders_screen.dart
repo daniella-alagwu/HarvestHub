@@ -18,7 +18,12 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
   int _tabIndex = 0;
   final _tabs = const ['Active', 'Past orders'];
 
-  static const _activeStatuses = ['Pending', 'Confirmed', 'Ready for Pickup', 'Packing'];
+  static const _activeStatuses = [
+    'Pending',
+    'Confirmed',
+    'Ready for Pickup',
+    'Packing'
+  ];
   static const _pastStatuses = ['Rejected', 'Completed', 'Cancelled'];
 
   Color _statusColor(String status) {
@@ -50,8 +55,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
           child: Text(
             'Not signed in.',
             style: TextStyle(
-              color: AppColors
-                  .textSecondary,
+              color: AppColors.textSecondary,
             ),
           ),
         ),
@@ -74,8 +78,11 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                   stream: _repo.streamOrders(farmerId),
                   builder: (context, snap) {
                     final allOrders = snap.data ?? [];
-                    final targetStatuses = _tabIndex == 0 ? _activeStatuses : _pastStatuses;
-                    final filtered = allOrders.where((order) => targetStatuses.contains(order.status)).toList();
+                    final targetStatuses =
+                        _tabIndex == 0 ? _activeStatuses : _pastStatuses;
+                    final filtered = allOrders
+                        .where((order) => targetStatuses.contains(order.status))
+                        .toList();
 
                     if (filtered.isEmpty) {
                       return Center(
@@ -84,8 +91,7 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
                               ? 'No active orders yet.'
                               : 'No past orders yet.',
                           style: const TextStyle(
-                            color: AppColors
-                                .textMuted,
+                            color: AppColors.textMuted,
                           ),
                         ),
                       );
@@ -115,7 +121,8 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
         icon: const Icon(Icons.arrow_back, color: Colors.white),
         onPressed: widget.onBackToOverview,
       ),
-      title: const Text('Orders', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+      title: const Text('Orders',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
       iconTheme: const IconThemeData(color: Colors.white),
     );
   }
@@ -195,45 +202,44 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
               Text(
                 '#${order.orderId.substring(
                   0,
-                  order.orderId.length
-                      .clamp(0, 6),
+                  order.orderId.length.clamp(0, 6),
                 )}',
                 style: const TextStyle(
                   fontSize: 13,
-                  fontWeight:
-                      FontWeight.w700,
-                  color: AppColors
-                      .textPrimary,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
                 ),
               ),
               Text(
                 order.status,
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _statusColor(order.status)),
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _statusColor(order.status)),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          Text('${order.itemQuantity} item(s)', style: TextStyle(fontSize: 12, color: AppColors.earthySoil)),
+          Text('${order.itemQuantity} item(s)',
+              style:
+                  const TextStyle(fontSize: 12, color: AppColors.earthySoil)),
           const SizedBox(height: 6),
           Text(
             '${order.itemQuantity} item(s)',
             style: const TextStyle(
               fontSize: 12,
-              color: AppColors
-                  .textSecondary,
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(
             height: 6,
           ),
           Text(
-            '\$${order.totalPrice.toStringAsFixed(2)}',
+            '₦${order.totalPrice.toStringAsFixed(2)}',
             style: const TextStyle(
               fontSize: 13,
-              fontWeight:
-                  FontWeight.w600,
-              color: AppColors
-                  .textPrimary,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(

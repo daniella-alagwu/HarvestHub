@@ -5,12 +5,10 @@ import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
 import '../../widgets/app_page_route.dart';
 import '../../widgets/app_text_field.dart';
-import '../home/home_screen.dart';
+import '../../widgets/role_router.dart';
 import 'email_verification_screen.dart';
 import 'forgot_password_screen.dart';
 import 'role_selection_screen.dart';
-import '../customer/shell/customer_shell.dart';
-import '../farmer/farmer_home_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -50,15 +48,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _routeAfterAuth(String role, {required String email}) {
     final verified = FirebaseAuth.instance.currentUser?.emailVerified ?? true;
-    if (verified) {
+    if (verified || !roleNeedsEmailVerification(role)) {
       Navigator.of(context).pushReplacement(
-        AppPageRoute(
-          page: role == 'customer'
-              ? const CustomerShell()
-              : role == 'farmer'
-                  ? const FarmerHomeShell()
-                  : HomeScreen(role: role),
-        ),
+        AppPageRoute(page: screenForRole(role)),
       );
     } else {
       Navigator.of(context).pushReplacement(

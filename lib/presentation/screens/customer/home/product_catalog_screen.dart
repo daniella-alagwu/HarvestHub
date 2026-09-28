@@ -60,9 +60,6 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
     });
   }
 
-  // ------------------------------------------------------------
-  // USER NAME
-  // ------------------------------------------------------------
 
   String _firstNameFrom(UserProfile? profile) {
     var fullName = profile?.name.trim() ?? '';
@@ -81,9 +78,6 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
     return first[0].toUpperCase() + first.substring(1);
   }
 
-  // ------------------------------------------------------------
-  // LOAD DEFAULT LOCATION
-  // ------------------------------------------------------------
 
   Future<void> _loadLocation() async {
     try {

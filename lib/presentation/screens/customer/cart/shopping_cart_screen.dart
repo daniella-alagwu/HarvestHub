@@ -20,19 +20,14 @@ class ShoppingCartScreen extends StatefulWidget {
     super.key,
   });
 
-  static const routeName =
-      '/customer/cart';
+  static const routeName = '/customer/cart';
 
   @override
-  State<ShoppingCartScreen>
-      createState() =>
-          _ShoppingCartScreenState();
+  State<ShoppingCartScreen> createState() => _ShoppingCartScreenState();
 }
 
-class _ShoppingCartScreenState
-    extends State<ShoppingCartScreen> {
-  final _marketRepository =
-      MarketRepository();
+class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
+  final _marketRepository = MarketRepository();
 
   List<Market> _markets = [];
 
@@ -43,8 +38,7 @@ class _ShoppingCartScreenState
   }
 
   Future<void> _loadMarkets() async {
-    final markets =
-        await _marketRepository.fetchAll();
+    final markets = await _marketRepository.fetchAll();
 
     if (!mounted) {
       return;
@@ -52,8 +46,7 @@ class _ShoppingCartScreenState
 
     setState(() => _markets = markets);
 
-    final cart =
-        context.read<CartProvider>();
+    final cart = context.read<CartProvider>();
 
     if (cart.pickupMarket == null &&
         markets.isNotEmpty &&
@@ -69,42 +62,32 @@ class _ShoppingCartScreenState
   ) {
     showModalBottomSheet(
       context: context,
-      backgroundColor:
-          AppColors.surface,
-      shape:
-          const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
           top: Radius.circular(20),
         ),
       ),
       builder: (context) {
         return SafeArea(
           child: Column(
-            mainAxisSize:
-                MainAxisSize.min,
+            mainAxisSize: MainAxisSize.min,
             children: _markets
                 .map(
                   (market) => ListTile(
-                    leading:
-                        const Icon(
+                    leading: const Icon(
                       Icons.storefront,
-                      color:
-                          AppColors.mainGreen,
+                      color: AppColors.mainGreen,
                     ),
                     title: Text(
                       market.marketName,
-                      style: AppTextStyles
-                          .bodyRegular
-                          .copyWith(
-                        fontWeight:
-                            FontWeight.w600,
+                      style: AppTextStyles.bodyRegular.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     subtitle: Text(
                       market.address,
-                      style:
-                          AppTextStyles.bodyMuted,
+                      style: AppTextStyles.bodyMuted,
                     ),
                     onTap: () {
                       cart.setPickupMarket(
@@ -129,38 +112,29 @@ class _ShoppingCartScreenState
   ) async {
     final total = cart.total;
 
-    final groups =
-        cart.itemsByFarmer;
+    final groups = cart.itemsByFarmer;
 
-    final pickupTime =
-        _parsePickupTime(
+    final pickupTime = _parsePickupTime(
       cart.pickupSlot?.label,
     );
 
     var feeRemaining = cart.fee;
 
     try {
-      for (final entry
-          in groups.entries) {
+      for (final entry in groups.entries) {
         final items = entry.value;
 
-        final itemsJson =
-            <String, dynamic>{
+        final itemsJson = <String, dynamic>{
           for (final item in items)
             item.product.id: {
-              'item_name':
-                  item.product.name,
-              'quantity':
-                  item.quantity,
-              'unit':
-                  item.product.unit,
-              'price_per_unit':
-                  item.product.pricePerUnit,
+              'item_name': item.product.name,
+              'quantity': item.quantity,
+              'unit': item.product.unit,
+              'price_per_unit': item.product.pricePerUnit,
             },
         };
 
-        final subtotal =
-            items.fold<double>(
+        final subtotal = items.fold<double>(
           0,
           (
             sum,
@@ -169,27 +143,17 @@ class _ShoppingCartScreenState
               sum + item.lineTotal,
         );
 
-        final groupFee =
-            feeRemaining > 0
-                ? feeRemaining
-                : 0;
+        final groupFee = feeRemaining > 0 ? feeRemaining : 0;
 
         feeRemaining -= groupFee;
 
-        await context
-            .read<OrderProvider>()
-            .placeOrder(
-          farmerId: entry.key,
-          marketName:
-              cart.pickupMarket
-                      ?.marketName ??
-                  '',
-          pickupSlotTime:
-              pickupTime,
-          itemsJson: itemsJson,
-          total:
-              subtotal + groupFee,
-        );
+        await context.read<OrderProvider>().placeOrder(
+              farmerId: entry.key,
+              marketName: cart.pickupMarket?.marketName ?? '',
+              pickupSlotTime: pickupTime,
+              itemsJson: itemsJson,
+              total: subtotal + groupFee,
+            );
       }
 
       cart.clear();
@@ -204,7 +168,7 @@ class _ShoppingCartScreenState
         SnackBar(
           content: Text(
             'Order confirmed • '
-            '\$${total.toStringAsFixed(2)} '
+            '₦${total.toStringAsFixed(2)} '
             '— see you at pickup!',
           ),
         ),
@@ -229,8 +193,7 @@ class _ShoppingCartScreenState
   DateTime? _parsePickupTime(
     String? label,
   ) {
-    if (label == null ||
-        label.trim().isEmpty) {
+    if (label == null || label.trim().isEmpty) {
       return null;
     }
 
@@ -244,17 +207,15 @@ class _ShoppingCartScreenState
 
     final now = DateTime.now();
 
-    final hour =
-        int.tryParse(
-              match.group(1)!,
-            ) ??
-            now.hour;
+    final hour = int.tryParse(
+          match.group(1)!,
+        ) ??
+        now.hour;
 
-    final minute =
-        int.tryParse(
-              match.group(2)!,
-            ) ??
-            0;
+    final minute = int.tryParse(
+          match.group(2)!,
+        ) ??
+        0;
 
     return DateTime(
       now.year,
@@ -269,34 +230,26 @@ class _ShoppingCartScreenState
   Widget build(
     BuildContext context,
   ) {
-    final cart =
-        context.watch<CartProvider>();
+    final cart = context.watch<CartProvider>();
 
     return Scaffold(
-      backgroundColor:
-          AppColors.background,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        automaticallyImplyLeading:
-            false,
-        title:
-            const Text('Your cart'),
+        automaticallyImplyLeading: false,
+        title: const Text('Your cart'),
       ),
       body: cart.isEmpty
           ? const EmptyState(
-              icon: Icons
-                  .shopping_basket_outlined,
-              title:
-                  'Your cart is empty',
-              subtitle:
-                  'Add fresh produce from a farmer to get started.',
+              icon: Icons.shopping_basket_outlined,
+              title: 'Your cart is empty',
+              subtitle: 'Add fresh produce from a farmer to get started.',
             )
           : SafeArea(
               child: Column(
                 children: [
                   Expanded(
                     child: ListView(
-                      padding:
-                          const EdgeInsets.fromLTRB(
+                      padding: const EdgeInsets.fromLTRB(
                         16,
                         12,
                         16,
@@ -304,8 +257,7 @@ class _ShoppingCartScreenState
                       ),
                       children: [
                         ...cart.itemList.map(
-                          (item) =>
-                              _CartItemRow(
+                          (item) => _CartItemRow(
                             item: item,
                           ),
                         ),
@@ -314,34 +266,25 @@ class _ShoppingCartScreenState
                         ),
                         Text(
                           'Pickup details',
-                          style:
-                              AppTextStyles
-                                  .headingMedium,
+                          style: AppTextStyles.headingMedium,
                         ),
                         const SizedBox(
                           height: 10,
                         ),
                         _PickupDetailsCard(
                           cart: cart,
-                          onChangeMarket:
-                              () =>
-                                  _pickMarket(
+                          onChangeMarket: () => _pickMarket(
                             cart,
                           ),
                         ),
-                        if (cart
-                                .pickupMarket !=
-                            null) ...[
+                        if (cart.pickupMarket != null) ...[
                           const SizedBox(
                             height: 14,
                           ),
                           Text(
                             'Choose a pickup slot',
-                            style: AppTextStyles
-                                .bodyRegular
-                                .copyWith(
-                              fontWeight:
-                                  FontWeight.w600,
+                            style: AppTextStyles.bodyRegular.copyWith(
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(
@@ -350,52 +293,30 @@ class _ShoppingCartScreenState
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: cart
-                                .pickupMarket!
-                                .pickupSlots
-                                .map(
+                            children: cart.pickupMarket!.pickupSlots.map(
                               (slot) {
                                 final isSelected =
-                                    cart
-                                            .pickupSlot
-                                            ?.label ==
-                                        slot.label;
+                                    cart.pickupSlot?.label == slot.label;
 
                                 return ChoiceChip(
-                                  label:
-                                      Text(
+                                  label: Text(
                                     slot.label,
                                   ),
-                                  selected:
-                                      isSelected,
-                                  onSelected: slot
-                                          .isAvailable
-                                      ? (_) =>
-                                          cart.setPickupSlot(
-                                        slot,
-                                      )
+                                  selected: isSelected,
+                                  onSelected: slot.isAvailable
+                                      ? (_) => cart.setPickupSlot(
+                                            slot,
+                                          )
                                       : null,
-                                  selectedColor:
-                                      AppColors
-                                          .mainGreen,
-                                  labelStyle:
-                                      AppTextStyles
-                                          .caption
-                                          .copyWith(
-                                    color:
-                                        isSelected
-                                            ? Colors
-                                                .white
-                                            : AppColors
-                                                .textPrimary,
+                                  selectedColor: AppColors.mainGreen,
+                                  labelStyle: AppTextStyles.caption.copyWith(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppColors.textPrimary,
                                   ),
-                                  backgroundColor:
-                                      AppColors
-                                          .surface,
-                                  side:
-                                      const BorderSide(
-                                    color: AppColors
-                                        .border,
+                                  backgroundColor: AppColors.surface,
+                                  side: const BorderSide(
+                                    color: AppColors.border,
                                   ),
                                 );
                               },
@@ -414,30 +335,23 @@ class _ShoppingCartScreenState
                   SafeArea(
                     top: false,
                     child: Padding(
-                      padding:
-                          const EdgeInsets.fromLTRB(
+                      padding: const EdgeInsets.fromLTRB(
                         16,
                         0,
                         16,
                         16,
                       ),
                       child: PrimaryButton(
-                        label:
-                            'Confirm order • '
-                            '\$${cart.total.toStringAsFixed(2)}',
-                        onPressed:
-                            cart.canCheckout
-                                ? () =>
-                                    _confirmOrder(
+                        label: 'Confirm order • '
+                            '₦${cart.total.toStringAsFixed(2)}',
+                        onPressed: cart.canCheckout
+                            ? () => _confirmOrder(
                                   cart,
                                 )
-                                : null,
-                        backgroundColor:
-                            cart.canCheckout
-                                ? AppColors
-                                    .mainGreen
-                                : AppColors
-                                    .disabledGreen,
+                            : null,
+                        backgroundColor: cart.canCheckout
+                            ? AppColors.mainGreen
+                            : AppColors.disabledGreen,
                       ),
                     ),
                   ),
@@ -448,8 +362,7 @@ class _ShoppingCartScreenState
   }
 }
 
-class _CartItemRow
-    extends StatelessWidget {
+class _CartItemRow extends StatelessWidget {
   const _CartItemRow({
     required this.item,
   });
@@ -461,71 +374,55 @@ class _CartItemRow
     BuildContext context,
   ) {
     return Padding(
-      padding:
-          const EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         vertical: 8,
       ),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 56,
             height: 56,
             child: ProductImage(
-              imageUrl:
-                  item.product.imageUrl,
+              imageUrl: item.product.imageUrl,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   item.product.name,
-                  style: AppTextStyles
-                      .bodyRegular
-                      .copyWith(
-                    fontWeight:
-                        FontWeight.w600,
+                  style: AppTextStyles.bodyRegular.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
                   item.product.farmerName,
-                  style:
-                      AppTextStyles.bodyMuted,
+                  style: AppTextStyles.bodyMuted,
                 ),
               ],
             ),
           ),
           Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: 8,
                   vertical: 3,
                 ),
-                decoration:
-                    BoxDecoration(
-                  color:
-                      AppColors.softGreen,
-                  borderRadius:
-                      BorderRadius.circular(
+                decoration: BoxDecoration(
+                  color: AppColors.softGreen,
+                  borderRadius: BorderRadius.circular(
                     20,
                   ),
                 ),
                 child: Text(
                   item.quantityLabel,
-                  style: AppTextStyles
-                      .caption
-                      .copyWith(
-                    color:
-                        AppColors.deepGreen,
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.deepGreen,
                   ),
                 ),
               ),
@@ -533,14 +430,10 @@ class _CartItemRow
                 height: 4,
               ),
               Text(
-                '\$${item.lineTotal.toStringAsFixed(2)}',
-                style: AppTextStyles
-                    .bodyRegular
-                    .copyWith(
-                  color:
-                      AppColors.deepGreen,
-                  fontWeight:
-                      FontWeight.w700,
+                '₦${item.lineTotal.toStringAsFixed(2)}',
+                style: AppTextStyles.bodyRegular.copyWith(
+                  color: AppColors.deepGreen,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -549,13 +442,9 @@ class _CartItemRow
             icon: const Icon(
               Icons.close,
               size: 18,
-              color:
-                  AppColors.textSecondary,
+              color: AppColors.textSecondary,
             ),
-            onPressed: () =>
-                context
-                    .read<CartProvider>()
-                    .removeItem(
+            onPressed: () => context.read<CartProvider>().removeItem(
                   item.product.id,
                 ),
           ),
@@ -565,8 +454,7 @@ class _CartItemRow
   }
 }
 
-class _PickupDetailsCard
-    extends StatelessWidget {
+class _PickupDetailsCard extends StatelessWidget {
   const _PickupDetailsCard({
     required this.cart,
     required this.onChangeMarket,
@@ -579,16 +467,13 @@ class _PickupDetailsCard
   Widget build(
     BuildContext context,
   ) {
-    final market =
-        cart.pickupMarket;
+    final market = cart.pickupMarket;
 
     return Container(
-      padding:
-          const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius:
-            BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: AppColors.border,
         ),
@@ -602,45 +487,33 @@ class _PickupDetailsCard
           const SizedBox(width: 10),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Pickup market',
-                  style:
-                      AppTextStyles.caption,
+                  style: AppTextStyles.caption,
                 ),
                 Text(
-                  market?.marketName ??
-                      'Choose a market',
-                  style: AppTextStyles
-                      .bodyRegular
-                      .copyWith(
-                    fontWeight:
-                        FontWeight.w600,
+                  market?.marketName ?? 'Choose a market',
+                  style: AppTextStyles.bodyRegular.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 if (market != null)
                   Text(
                     market.address,
-                    style:
-                        AppTextStyles.caption,
+                    style: AppTextStyles.caption,
                   ),
               ],
             ),
           ),
           TextButton(
-            onPressed:
-                onChangeMarket,
+            onPressed: onChangeMarket,
             child: Text(
               'Change',
-              style: AppTextStyles
-                  .bodyRegular
-                  .copyWith(
-                color:
-                    AppColors.mainGreen,
-                fontWeight:
-                    FontWeight.w600,
+              style: AppTextStyles.bodyRegular.copyWith(
+                color: AppColors.mainGreen,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -650,8 +523,7 @@ class _PickupDetailsCard
   }
 }
 
-class _TotalsCard
-    extends StatelessWidget {
+class _TotalsCard extends StatelessWidget {
   const _TotalsCard({
     required this.cart,
   });
@@ -663,12 +535,10 @@ class _TotalsCard
     BuildContext context,
   ) {
     return Container(
-      padding:
-          const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius:
-            BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: AppColors.border,
         ),
@@ -685,8 +555,7 @@ class _TotalsCard
             value: cart.fee,
           ),
           const Padding(
-            padding:
-                EdgeInsets.symmetric(
+            padding: EdgeInsets.symmetric(
               vertical: 10,
             ),
             child: Divider(
@@ -705,8 +574,7 @@ class _TotalsCard
   }
 }
 
-class _TotalsRow
-    extends StatelessWidget {
+class _TotalsRow extends StatelessWidget {
   const _TotalsRow({
     required this.label,
     required this.value,
@@ -722,24 +590,21 @@ class _TotalsRow
     BuildContext context,
   ) {
     final style = isTotal
-        ? AppTextStyles.bodyRegular
-            .copyWith(
-            fontWeight:
-                FontWeight.w700,
+        ? AppTextStyles.bodyRegular.copyWith(
+            fontWeight: FontWeight.w700,
             fontSize: 16,
           )
         : AppTextStyles.bodyRegular;
 
     return Row(
-      mainAxisAlignment:
-          MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
           style: style,
         ),
         Text(
-          '\$${value.toStringAsFixed(2)}',
+          '₦${value.toStringAsFixed(2)}',
           style: style,
         ),
       ],
