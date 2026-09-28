@@ -17,6 +17,18 @@ const List<String> _productCategories = [
   'Spices',
   'Legumes & Pulses',
 ];
+const List<String> _productUnits = [
+  'kg',
+  'g',
+  'litre',
+  'ml',
+  'piece',
+  'dozen',
+  'bunch',
+  'pack',
+  'crate',
+];
+
 
 class FarmerAddProductScreen extends StatefulWidget {
   const FarmerAddProductScreen({super.key, this.existingProduct});
@@ -38,6 +50,7 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
 
   Uint8List? _newImageBytes;
   String? _selectedCategory;
+  String _selectedUnit = 'kg';
   bool _isSubmitting = false;
 
   bool get _isEditing => widget.existingProduct != null;
@@ -53,6 +66,8 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
     _stockController =
         TextEditingController(text: p != null ? p.stockQty.toString() : '');
     _selectedCategory = p?.category ?? _productCategories.first;
+    _selectedUnit = p?.unit ?? 'kg';
+    if (!_productUnits.contains(_selectedUnit)) _selectedUnit = 'kg';
   }
 
   @override
@@ -97,6 +112,7 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
           farmerId: uid,
           itemName: _nameController.text.trim(),
           category: category,
+          unit: _selectedUnit,
           description: _descriptionController.text.trim(),
           pricePerUnit: double.parse(_priceController.text.trim()),
           stockQty: int.parse(_stockController.text.trim()),
@@ -108,6 +124,7 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
           farmerId: uid,
           itemName: _nameController.text.trim(),
           category: category,
+          unit: _selectedUnit,
           description: _descriptionController.text.trim(),
           pricePerUnit: double.parse(_priceController.text.trim()),
           stockQty: int.parse(_stockController.text.trim()),
@@ -221,6 +238,23 @@ class _FarmerAddProductScreenState extends State<FarmerAddProductScreen> {
                   validator: (value) => (value == null || value.trim().isEmpty)
                       ? 'Category is required'
                       : null,
+                ),
+                const SizedBox(height: 16),
+                _buildLabel('Product unit'),
+                DropdownButtonFormField<String>(
+                  value: _selectedUnit,
+                  decoration: _inputDecoration('Select a unit'),
+                  items: _productUnits
+                      .map((unit) => DropdownMenuItem<String>(
+                            value: unit,
+                            child: Text(unit),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _selectedUnit = value);
+                    }
+                  },
                 ),
                 const SizedBox(height: 16),
                 _buildLabel('Description'),

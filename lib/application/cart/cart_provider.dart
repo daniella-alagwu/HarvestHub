@@ -5,8 +5,6 @@ import '../../data/models/product_model.dart';
 import '../../data/models/market_model.dart';
 
 class CartProvider extends ChangeNotifier {
-  static const double marketFee = 0.75;
-
   final Map<String, CartItem> _items = {};
 
   Market? _pickupMarket;
@@ -40,11 +38,9 @@ class CartProvider extends ChangeNotifier {
             sum + item.lineTotal,
       );
 
-  double get fee =>
-      _items.isEmpty ? 0 : marketFee;
+  double get fee => 0;
 
-  double get total =>
-      subtotal + fee;
+  double get total => subtotal;
 
 
   Map<String, List<CartItem>> get itemsByFarmer {
