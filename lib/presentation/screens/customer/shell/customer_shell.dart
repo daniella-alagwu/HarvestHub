@@ -12,6 +12,7 @@ import '../assistant/ai_assistant_screen.dart';
 import '../cart/shopping_cart_screen.dart';
 import '../home/product_catalog_screen.dart';
 import '../orders/order_history_screen.dart';
+import '../profile/customer_profile_screen.dart';
 import '../search/search_screen.dart';
 
 class CustomerShell
@@ -109,6 +110,10 @@ class _CustomerShellState
       const SearchScreen(),
       const OrderHistoryScreen(),
       const ShoppingCartScreen(),
+      CustomerProfileScreen(
+        onOpenOrders: () => _goToTab(2),
+        onBackToHome: () => _goToTab(0),
+      ),
     ];
 
     return Scaffold(
@@ -288,6 +293,18 @@ class _CustomerShellState
                     AppColors.mainGreen,
               ),
               label: 'Cart',
+            ),
+            const NavigationDestination(
+              icon: Icon(
+                Icons.person_outline,
+              ),
+              selectedIcon:
+                  Icon(
+                Icons.person,
+                color:
+                    AppColors.mainGreen,
+              ),
+              label: 'Profile',
             ),
           ],
         ),
