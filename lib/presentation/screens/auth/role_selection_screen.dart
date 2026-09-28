@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../data/models/user_role.dart';
 import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
@@ -12,154 +13,318 @@ class RoleSelectionScreen extends StatefulWidget {
   static const routeName = '/role-selection';
 
   @override
-  State<RoleSelectionScreen> createState() => _RoleSelectionScreenState();
+  State<RoleSelectionScreen> createState() =>
+      _RoleSelectionScreenState();
 }
 
-class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
+class _RoleSelectionScreenState
+    extends State<RoleSelectionScreen> {
   UserRole _selectedRole = UserRole.customer;
 
   Color get _accent =>
-      _selectedRole == UserRole.customer ? AppColors.mainGreen : AppColors.autumnRust;
+      _selectedRole == UserRole.customer
+          ? AppColors.mainGreen
+          : AppColors.autumnRust;
 
   void _continue() {
     Navigator.of(context).push(
-      AppPageRoute(page: RegisterScreen(role: _selectedRole)),
+      AppPageRoute(
+        page: RegisterScreen(
+          role: _selectedRole,
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isCustomer =
+        _selectedRole == UserRole.customer;
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 18),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'STEP 1 OF 2',
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.wheatGold,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                ),
+        child: Column(
+          children: [
+           
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                18,
+                8,
+                18,
+                0,
               ),
-              const SizedBox(height: 10),
-              Text(
-                'How will you use HarvestHub?',
-                style: AppTextStyles.headingLarge.copyWith(fontSize: 25),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Pick an account type — you can always add the other role later.',
-                style: AppTextStyles.bodyMuted,
-              ),
-              const SizedBox(height: 28),
-
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Expanded(
-                    child: _RoleTile(
-                      title: 'Customer',
-                      description: 'Browse and order fresh produce from local farmers.',
-                      icon: Icons.shopping_basket_outlined,
-                      accentColor: AppColors.mainGreen,
-                      accentTint: AppColors.softGreen,
-                      isSelected: _selectedRole == UserRole.customer,
-                      onTap: () => setState(() => _selectedRole = UserRole.customer),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.softGreen,
+                      borderRadius:
+                          BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      splashRadius: 20,
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        size: 20,
+                        color: AppColors.deepGreen,
+                      ),
+                      onPressed: () =>
+                          Navigator.of(context)
+                              .maybePop(),
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: _RoleTile(
-                      title: 'Farmer',
-                      description: 'List your harvest and manage orders and stock.',
-                      icon: Icons.agriculture_rounded,
-                      accentColor: AppColors.autumnRust,
-                      accentTint: AppColors.autumnRust.withValues(alpha: 0.10),
-                      isSelected: _selectedRole == UserRole.farmer,
-                      onTap: () => setState(() => _selectedRole = UserRole.farmer),
+                  const Spacer(),
+                  Text(
+                    'STEP 1 OF 2',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.wheatGold,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
                     ),
                   ),
                 ],
               ),
+            ),
 
-              const Spacer(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  28,
+                  24,
+                  18,
+                ),
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
 
-              SizedBox(
-                width: double.infinity,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _accent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                    const SizedBox(height: 28),
+
+                    Text(
+                      'Choose your role',
+                      style: AppTextStyles.headingLarge
+                          .copyWith(
+                        fontSize: 28,
+                        height: 1.15,
+                        letterSpacing: -0.4,
                       ),
-                      elevation: 0,
                     ),
-                    onPressed: _continue,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Continue as ${_selectedRole == UserRole.customer ? "Customer" : "Farmer"}',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+
+                    const SizedBox(height: 8),
+
+                    Text(
+                      'Tell us how you’ll use HarvestHub so we can set up the right experience for you.',
+                      style: AppTextStyles.bodyMuted.copyWith(
+                        fontSize: 13.5,
+                        height: 1.55,
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    
+                    _RoleCard(
+                      title: 'Customer',
+                      description:
+                          'Discover local produce, compare products, and place orders from farmers near you.',
+                      icon:
+                          Icons.shopping_bag_rounded,
+                      accentColor:
+                          AppColors.mainGreen,
+                      accentTint:
+                          AppColors.softGreen,
+                      isSelected: isCustomer,
+                      onTap: () {
+                        setState(
+                          () => _selectedRole =
+                              UserRole.customer,
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    //farmer
+                    _RoleCard(
+                      title: 'Farmer',
+                      description:
+                          'Showcase your harvest, manage your stock, and keep track of customer orders.',
+                      icon:
+                          Icons.agriculture_rounded,
+                      accentColor:
+                          AppColors.autumnRust,
+                      accentTint:
+                          AppColors.autumnRust
+                              .withOpacity(0.10),
+                      isSelected:
+                          !isCustomer,
+                      onTap: () {
+                        setState(
+                          () => _selectedRole =
+                              UserRole.farmer,
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    // --------------------------------------------------
+                    // HELPER TEXT
+                    // --------------------------------------------------
+                    Container(
+                      width: double.infinity,
+                      padding:
+                          const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius:
+                            BorderRadius.circular(14),
+                        border: Border.all(
+                          color: AppColors.border,
                         ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.arrow_forward_rounded, size: 18),
-                      ],
+                      ),
+                      child: Row(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            size: 18,
+                            color:
+                                AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'You can always explore the other side of the marketplace later.',
+                              style: AppTextStyles.caption
+                                  .copyWith(
+                                fontSize: 11.5,
+                                height: 1.45,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ----------------------------------------------------------
+            // BOTTOM ACTION AREA
+            // ----------------------------------------------------------
+            Container(
+              padding: const EdgeInsets.fromLTRB(
+                24,
+                14,
+                24,
+                16,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                border: Border(
+                  top: BorderSide(
+                    color: AppColors.border,
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
-
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(AppPageRoute(page: const LoginScreen()));
-                  },
-                  child: RichText(
-                    text: TextSpan(
-                      text: 'Already have an account? ',
-                      style: AppTextStyles.bodyMuted,
-                      children: const [
-                        TextSpan(
-                          text: 'Log In',
-                          style: TextStyle(
-                            color: AppColors.deepGreen,
-                            fontWeight: FontWeight.w700,
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _accent,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape:
+                              RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(16),
                           ),
                         ),
-                      ],
+                        onPressed: _continue,
+                        child: Row(
+                          mainAxisAlignment:
+                              MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              isCustomer
+                                  ? 'Continue as Customer'
+                                  : 'Continue as Farmer',
+                              style: AppTextStyles
+                                  .buttonLabel
+                                  .copyWith(
+                                fontSize: 14.5,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 19,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+
+                    const SizedBox(height: 8),
+
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          AppPageRoute(
+                            page:
+                                const LoginScreen(),
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor:
+                            AppColors.deepGreen,
+                      ),
+                      child: RichText(
+                        text: TextSpan(
+                          text:
+                              'Already have an account? ',
+                          style:
+                              AppTextStyles.bodyMuted,
+                          children: const [
+                            TextSpan(
+                              text: 'Log In',
+                              style: TextStyle(
+                                color:
+                                    AppColors.deepGreen,
+                                fontWeight:
+                                    FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _RoleTile extends StatelessWidget {
-  const _RoleTile({
+class _RoleCard extends StatelessWidget {
+  const _RoleCard({
     required this.title,
     required this.description,
     required this.icon,
@@ -179,63 +344,152 @@ class _RoleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? accentTint : AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: isSelected ? accentColor : AppColors.border,
-            width: isSelected ? 2 : 1,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(
+            milliseconds: 180,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: accentColor.withValues(alpha: 0.15),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
-                  ),
-                ]
-              : [],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.14),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: accentColor, size: 22),
+          width: double.infinity,
+          constraints: const BoxConstraints(
+            minHeight: 142,
+          ),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? accentTint
+                : AppColors.surface,
+            borderRadius:
+                BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected
+                  ? accentColor
+                  : AppColors.border,
+              width: isSelected ? 1.7 : 1,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color:
+                          accentColor.withOpacity(
+                        0.10,
+                      ),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color:
+                          Colors.black.withOpacity(
+                        0.025,
+                      ),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+          ),
+          child: Row(
+            crossAxisAlignment:
+                CrossAxisAlignment.center,
+            children: [
+              // --------------------------------------------------------
+              // ROLE ICON
+              // --------------------------------------------------------
+              AnimatedContainer(
+                duration: const Duration(
+                  milliseconds: 180,
                 ),
-                if (isSelected)
-                  Icon(Icons.check_circle_rounded, color: accentColor, size: 20)
-                else
-                  const Icon(Icons.radio_button_unchecked, color: AppColors.border, size: 20),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                width: 62,
+                height: 62,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? accentColor
+                      : accentTint,
+                  borderRadius:
+                      BorderRadius.circular(18),
+                ),
+                child: Icon(
+                  icon,
+                  size: 31,
+                  color: isSelected
+                      ? Colors.white
+                      : accentColor,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              description,
-              style: AppTextStyles.bodyMuted.copyWith(fontSize: 12.5, height: 1.3),
-            ),
-          ],
+
+              const SizedBox(width: 16),
+
+              // --------------------------------------------------------
+              // ROLE TEXT
+              // --------------------------------------------------------
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles
+                          .headingMedium
+                          .copyWith(
+                        fontSize: 17,
+                        fontWeight:
+                            FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      description,
+                      style: AppTextStyles
+                          .bodyMuted
+                          .copyWith(
+                        fontSize: 12.2,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // --------------------------------------------------------
+              // SELECTOR
+              // --------------------------------------------------------
+              AnimatedContainer(
+                duration: const Duration(
+                  milliseconds: 180,
+                ),
+                width: 25,
+                height: 25,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSelected
+                      ? accentColor
+                      : Colors.transparent,
+                  border: Border.all(
+                    color: isSelected
+                        ? accentColor
+                        : AppColors.border,
+                    width: 1.5,
+                  ),
+                ),
+                child: isSelected
+                    ? const Icon(
+                        Icons.check_rounded,
+                        size: 16,
+                        color: Colors.white,
+                      )
+                    : null,
+              ),
+            ],
+          ),
         ),
       ),
     );
