@@ -54,7 +54,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Yes, Log out', style: TextStyle(color: AppColors.error)),
+            child: const Text('Yes, Log out', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -252,7 +252,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               border: Border.all(color: AppColors.border),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.logout, color: AppColors.textSecondary),
+            child: const Icon(Icons.logout, color: AppColors.textSecondary),
           ),
         ),
       ],
@@ -326,7 +326,7 @@ class _StatTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border.all(color: accentColor?.withOpacity(0.35) ?? AppColors.border),
+        border: Border.all(color: accentColor?.withValues(alpha: 0.35) ?? AppColors.border),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(

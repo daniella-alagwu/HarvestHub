@@ -6,103 +6,191 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function currentUserRole() {
-      return signedIn()
-        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
-        : null;
+    function userData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isActiveAccount() {
+      return userData().get('active', true) == true;
+    }
+
+    function hasRole(role) {
+      return signedIn() && userData().role == role && isActiveAccount();
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
     }
 
     function isFarmer() {
-      return signedIn() && currentUserRole() == 'farmer';
+      return hasRole('farmer');
     }
 
     function isCustomer() {
-      return signedIn() && currentUserRole() == 'customer';
+      return hasRole('customer');
+    }
+
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    function validOrderStatus(status) {
+      return status in [
+        'Pending',
+        'Confirmed',
+        'Ready for Pickup',
+        'Completed',
+        'Cancelled'
+      ];
     }
 
     match /users/{userId} {
-      allow create: if signedIn() && request.auth.uid == userId;
-      allow read, update: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role in ['customer', 'farmer']
+        && request.resource.data.get('active', true) == true;
+
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      
+      allow read: if isAdmin();
+
+      allow update: if signedIn()
+        && request.auth.uid == userId
+        && !changedKeys().hasAny(['role', 'active']);
+
+      allow update: if isAdmin()
+        && changedKeys().hasOnly(['active'])
+        && request.resource.data.active is bool
+        && userId != request.auth.uid;
     }
 
     match /farmers/{farmerId} {
       allow read: if signedIn();
-      allow create, update: if isFarmer() && request.auth.uid == farmerId;
+
+      allow create: if isFarmer()
+        && request.auth.uid == farmerId
+        && request.resource.data.get('active', true) == true;
+
+      allow update: if isFarmer()
+        && request.auth.uid == farmerId
+        && !changedKeys().hasAny(['active', 'user_id']);
+
+      allow update: if isAdmin()
+        && changedKeys().hasOnly(['active'])
+        && request.resource.data.active is bool;
     }
 
     match /farmers_market/{marketId} {
       allow read: if signedIn();
-      allow create, update, delete: if isFarmer();
+      allow write: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
     }
 
     match /products/{productId} {
       allow read: if signedIn();
 
       allow create: if isFarmer()
-        && request.resource.data.farmer_id == request.auth.uid;
+        && request.resource.data.farmer_id == request.auth.uid
+        && request.resource.data.get('active', true) == true;
 
-      allow update, delete: if isFarmer()
+      allow update: if isFarmer()
+        && resource.data.farmer_id == request.auth.uid
+        && !changedKeys().hasAny(['active', 'farmer_id']);
+
+      allow delete: if isFarmer()
         && resource.data.farmer_id == request.auth.uid;
 
       allow update: if isCustomer()
-        && request.resource.data.diff(resource.data)
-            .affectedKeys()
-            .hasOnly(['stock_qty'])
+        && changedKeys().hasOnly(['stock_qty'])
         && request.resource.data.stock_qty is int
         && request.resource.data.stock_qty >= 0
         && request.resource.data.stock_qty <= resource.data.stock_qty;
+
+      allow update: if isAdmin()
+        && changedKeys().hasOnly(['active'])
+        && request.resource.data.active is bool;
+
+      allow delete: if isAdmin();
     }
 
     match /orders/{orderId} {
       allow read: if signedIn()
         && (
           resource.data.customer_id == request.auth.uid ||
-          resource.data.farmer_id == request.auth.uid
+          resource.data.farmer_id == request.auth.uid ||
+          isAdmin()
         );
 
       allow create: if isCustomer()
-        && request.resource.data.customer_id == request.auth.uid;
+        && request.resource.data.customer_id == request.auth.uid
+        && request.resource.data.status == 'Pending';
 
-      // Customer may only change their pickup slot.
-      // Farmer may only change order status.
-      allow update: if signedIn() && (
-        (
-          resource.data.customer_id == request.auth.uid
-          && request.resource.data.customer_id == resource.data.customer_id
-          && request.resource.data.farmer_id == resource.data.farmer_id
-          && request.resource.data.diff(resource.data)
-              .affectedKeys()
-              .hasOnly(['pickup_slot_time'])
-        )
-        ||
-        (
-          isFarmer()
-          && resource.data.farmer_id == request.auth.uid
-          && request.resource.data.customer_id == resource.data.customer_id
-          && request.resource.data.farmer_id == resource.data.farmer_id
-          && request.resource.data.diff(resource.data)
-              .affectedKeys()
-              .hasOnly(['status'])
-        )
-      );
+      allow update: if isCustomer()
+        && resource.data.customer_id == request.auth.uid
+        && resource.data.status in ['Pending', 'Confirmed']
+        && changedKeys().hasOnly(['pickup_slot_time', 'status'])
+        && (
+          !changedKeys().hasAny(['status']) ||
+          request.resource.data.status == 'Cancelled'
+        );
+
+      allow update: if isFarmer()
+        && resource.data.farmer_id == request.auth.uid
+        && changedKeys().hasOnly(['status'])
+        && validOrderStatus(request.resource.data.status);
+
+      allow update: if isAdmin()
+        && changedKeys().hasOnly(['status'])
+        && validOrderStatus(request.resource.data.status);
     }
 
     match /notifications/{notificationId} {
-      allow create: if isFarmer()
-        && request.resource.data.farmer_id == request.auth.uid;
+      allow read: if signedIn()
+        && (
+          resource.data.get('farmer_id', null) == request.auth.uid ||
+          resource.data.get('customer_id', null) == request.auth.uid
+        );
 
-      allow read, update: if isFarmer()
-        && resource.data.farmer_id == request.auth.uid;
+      allow create: if isFarmer()
+        && request.resource.data.get('farmer_id', null) == request.auth.uid;
+
+      allow create: if isFarmer()
+        && request.resource.data.get('sender_farmer_id', null) == request.auth.uid
+        && request.resource.data.customer_id is string
+        && !('farmer_id' in request.resource.data);
+
+      allow update: if signedIn()
+        && (
+          resource.data.get('farmer_id', null) == request.auth.uid ||
+          resource.data.get('customer_id', null) == request.auth.uid
+        )
+        && changedKeys().hasOnly(['is_read']);
+    }
+
+    match /feedback/{feedbackId} {
+      allow create: if signedIn()
+        && request.resource.data.user_id == request.auth.uid;
+
+      allow read: if signedIn()
+        && (resource.data.user_id == request.auth.uid || isAdmin());
+
+      allow delete: if isAdmin();
     }
 
     match /wishlists/{userId}/items/{productId} {
-      allow read, write: if signedIn()
-        && request.auth.uid == userId;
+      allow read, write: if signedIn() && request.auth.uid == userId;
     }
 
     match /follows/{userId}/farmers/{farmerId} {
-      allow read, write: if signedIn()
-        && request.auth.uid == userId;
+      allow read, write: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
     }
   }
 }
