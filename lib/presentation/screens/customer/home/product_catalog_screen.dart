@@ -14,6 +14,9 @@ import '../farmer/farmer_profile_screen.dart';
 import '../product/product_details_screen.dart';
 import '../wishlist/wishlist_screen.dart';
 import '../../../widgets/logout.dart';
+import '../../../../core/greeting.dart';
+import '../../../../data/models/user_profile.dart';
+import '../../../../data/repositories/user_repository.dart';
 
 class ProductCatalogScreen extends StatefulWidget {
   const ProductCatalogScreen({super.key, this.onOpenSearch});
@@ -34,17 +37,19 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
     });
   }
 
-  String get _greeting {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  }
+    final _userRepository = UserRepository();
+  late final Stream<UserProfile?> _profileStream =
+      _userRepository.watchCurrentUserProfile();
 
-  String get _firstName {
-    final displayName = FirebaseAuth.instance.currentUser?.displayName;
-    if (displayName == null || displayName.trim().isEmpty) return 'there';
-    return displayName.trim().split(' ').first;
+  String _firstNameFrom(UserProfile? profile) {
+    var fullName = profile?.name.trim() ?? '';
+    if (fullName.isEmpty) {
+      fullName = FirebaseAuth.instance.currentUser?.displayName?.trim() ?? '';
+    }
+    if (fullName.isEmpty) return 'there';
+
+    final first = fullName.split(RegExp(r'\s+')).first;
+    return first[0].toUpperCase() + first.substring(1);
   }
 
   @override
@@ -72,7 +77,15 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                           style: AppTextStyles.caption,
                         ),
                         const SizedBox(height: 2),
-                        Text('$_greeting, $_firstName', style: AppTextStyles.headingLarge),
+                                                StreamBuilder<UserProfile?>(
+                          stream: _profileStream,
+                          builder: (context, snapshot) {
+                            return Text(
+                              '${timeBasedGreeting()}, ${_firstNameFrom(snapshot.data)}',
+                              style: AppTextStyles.headingLarge,
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
