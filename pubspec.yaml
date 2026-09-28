@@ -58,6 +58,7 @@ flutter:
     - assets/splash_screen/
     - assets/images/bg_images/
     - assets/images/mascot/
+    - assets/images/categories/
     - assets/images/google_logo.png
 
 
