@@ -5,6 +5,7 @@ import 'farmer_dashboard_screen.dart';
 import 'farmer_products_screen.dart';
 import 'farmer_orders_screen.dart';
 import 'farmer_reports_screen.dart';
+import 'farmer_profile_screen.dart';
 
 class FarmerHomeShell extends StatefulWidget {
   const FarmerHomeShell({super.key});
@@ -20,6 +21,7 @@ class _FarmerHomeShellState extends State<FarmerHomeShell> {
   Offset _mascotOffset = Offset.zero;
 
   void _goToOverview() => setState(() => _index = 0);
+  void _goToTab(int i) => setState(() => _index = i);
 
   void _openAiAssistantModal(BuildContext context) {
     showModalBottomSheet(
@@ -58,10 +60,16 @@ class _FarmerHomeShellState extends State<FarmerHomeShell> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      const FarmerDashboardScreen(),
+      FarmerDashboardScreen(
+        onOpenInventory: () => _goToTab(1),
+        onOpenOrders: () => _goToTab(2),
+        onOpenReports: () => _goToTab(3),
+        onOpenProfile: () => _goToTab(4),
+      ),
       FarmerProductsScreen(onBackToOverview: _goToOverview),
       FarmerOrdersScreen(onBackToOverview: _goToOverview),
       FarmerReportsScreen(onBackToOverview: _goToOverview),
+      FarmerProfileScreen(onBackToOverview: _goToOverview),
     ];
 
     return Scaffold(
@@ -162,6 +170,7 @@ class _FarmerHomeShellState extends State<FarmerHomeShell> {
           BottomNavigationBarItem(icon: Icon(Icons.inventory_2_outlined), label: 'Inventory'),
           BottomNavigationBarItem(icon: Icon(Icons.receipt_long_outlined), label: 'Orders'),
           BottomNavigationBarItem(icon: Icon(Icons.bar_chart_outlined), label: 'Reports'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), label: 'Profile'),
         ],
       ),
     );

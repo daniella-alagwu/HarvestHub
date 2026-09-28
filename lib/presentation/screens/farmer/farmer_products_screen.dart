@@ -266,13 +266,6 @@ class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
           TextButton(
             onPressed: () => Navigator.pop(
               context,
-              false,
-            ),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(
-              context,
               true,
             ),
             child: const Text(
