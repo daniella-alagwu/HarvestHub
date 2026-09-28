@@ -122,6 +122,41 @@ class AuthRepository {
   }
 
   Future<String> signInWithGoogle({String intendedRole = 'customer'}) async {
+    final UserCredential userCredential;
+    if (kIsWeb) {
+      userCredential = await _signInWithGoogleWeb();
+    } else {
+      userCredential = await _signInWithGoogleNative();
+    }
+    return _completeGoogleSignIn(userCredential, intendedRole);
+  }
+
+  Future<UserCredential> _signInWithGoogleWeb() async {
+    final provider = GoogleAuthProvider()
+      ..addScope('email')
+      ..setCustomParameters({'prompt': 'select_account'});
+    try {
+      return await _auth.signInWithPopup(provider);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'popup-closed-by-user' ||
+          e.code == 'cancelled-popup-request') {
+        throw FirebaseAuthException(
+          code: 'google-sign-in-cancelled',
+          message: 'Google sign-in was cancelled.',
+        );
+      }
+      if (e.code == 'popup-blocked') {
+        throw FirebaseAuthException(
+          code: 'google-sign-in-failed',
+          message: 'Your browser blocked the Google sign-in popup. '
+              'Allow popups for this site and try again.',
+        );
+      }
+      rethrow;
+    }
+  }
+
+  Future<UserCredential> _signInWithGoogleNative() async {
     await _ensureGoogleSignInReady();
 
     final GoogleSignInAccount googleUser;
@@ -150,8 +185,13 @@ class AuthRepository {
     }
 
     final credential = GoogleAuthProvider.credential(idToken: idToken);
+    return _auth.signInWithCredential(credential);
+  }
 
-    final userCredential = await _auth.signInWithCredential(credential);
+  Future<String> _completeGoogleSignIn(
+    UserCredential userCredential,
+    String intendedRole,
+  ) async {
     final uid = userCredential.user!.uid;
     final doc = await _firestore.collection('users').doc(uid).get();
 
@@ -228,11 +268,13 @@ class AuthRepository {
   }
 
   Future<void> signOut() async {
-    try {
-      await _ensureGoogleSignInReady();
-      await _googleSignIn.signOut();
-    } catch (e) {
-      debugPrint('Google sign-out skipped: $e');
+    if (!kIsWeb) {
+      try {
+        await _ensureGoogleSignInReady();
+        await _googleSignIn.signOut();
+      } catch (e) {
+        debugPrint('Google sign-out skipped: $e');
+      }
     }
     await _auth.signOut();
   }
