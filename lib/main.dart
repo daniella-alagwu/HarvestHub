@@ -18,6 +18,7 @@ import 'presentation/screens/auth/register_screen.dart';
 import 'presentation/screens/customer/shell/customer_shell.dart';
 import 'presentation/screens/customer/assistant/ai_assistant_screen.dart';
 import 'presentation/screens/farmer/farmer_dashboard_screen.dart';
+import 'presentation/screens/admin/admin_dashboard_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,10 +61,14 @@ class HarvestHubApp extends StatelessWidget {
         routes: {
           SplashScreen.routeName: (context) => const SplashScreen(),
           WelcomeScreen.routeName: (context) => const WelcomeScreen(),
-          RoleSelectionScreen.routeName: (context) => const RoleSelectionScreen(),
+          RoleSelectionScreen.routeName: (context) =>
+              const RoleSelectionScreen(),
           LoginScreen.routeName: (context) => const LoginScreen(),
           CustomerShell.routeName: (context) => const CustomerShell(),
-          FarmerDashboardScreen.routeName: (context) => const FarmerDashboardScreen(),
+          FarmerDashboardScreen.routeName: (context) =>
+              const FarmerDashboardScreen(),
+          AdminDashboardScreen.routeName: (context) =>
+              const AdminDashboardScreen(),
           AiAssistantScreen.routeName: (context) => const AiAssistantScreen(),
         },
         onGenerateRoute: (settings) {
