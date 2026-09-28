@@ -10,10 +10,8 @@ import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
 import '../../widgets/app_page_route.dart';
 import '../../widgets/app_text_field.dart';
-import '../customer/shell/customer_shell.dart';
-import '../home/home_screen.dart';
+import '../../widgets/role_router.dart';
 import 'email_verification_screen.dart';
-import '../farmer/farmer_home_shell.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key, required this.role});
@@ -145,7 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       if (!mounted) return;
       final user = FirebaseAuth.instance.currentUser;
-      if (user != null && !user.emailVerified) {
+      if (user != null && !user.emailVerified && roleNeedsEmailVerification(role)) {
         Navigator.of(context).pushReplacement(
           AppPageRoute(
             page: EmailVerificationScreen(email: user.email ?? '', role: role),
@@ -153,11 +151,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       } else {
         Navigator.of(context).pushReplacement(
-            role == 'customer'
-              ? AppPageRoute(page: const CustomerShell())
-              : role == 'farmer'
-                  ? AppPageRoute(page: const FarmerHomeShell())
-                  : AppPageRoute(page: HomeScreen(role: role)),
+          AppPageRoute(page: screenForRole(role)),
         );
       }
     } on FirebaseAuthException catch (e) {

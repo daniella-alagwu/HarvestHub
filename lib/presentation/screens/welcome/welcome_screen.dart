@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../theme/colors/app_colors.dart';
-import '../../theme/text_styles.dart';
 import 'package:harvesthub/presentation/screens/auth/login_screen.dart';
 import 'package:harvesthub/presentation/screens/auth/role_selection_screen.dart';
 

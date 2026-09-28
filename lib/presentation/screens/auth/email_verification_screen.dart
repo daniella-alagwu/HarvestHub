@@ -5,10 +5,8 @@ import '../../../data/repositories/auth_repository.dart';
 import '../../theme/colors/app_colors.dart';
 import '../../theme/text_styles.dart';
 import '../../widgets/app_page_route.dart';
-import '../home/home_screen.dart';
+import '../../widgets/role_router.dart';
 import '../splash/splash_screen.dart';
-import '../customer/shell/customer_shell.dart';
-import '../farmer/farmer_home_shell.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
   const EmailVerificationScreen({
@@ -68,11 +66,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     void _goHome() {
     _autoCheckTimer?.cancel();
     Navigator.of(context).pushAndRemoveUntil(
-            widget.role == 'customer'
-          ? AppPageRoute(page: const CustomerShell())
-          : widget.role == 'farmer'
-              ? AppPageRoute(page: const FarmerHomeShell())
-              : AppPageRoute(page: HomeScreen(role: widget.role)),
+      AppPageRoute(page: screenForRole(widget.role)),
       (route) => false,
     );
   }

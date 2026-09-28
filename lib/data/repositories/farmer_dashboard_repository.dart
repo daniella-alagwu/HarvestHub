@@ -1,15 +1,15 @@
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
+import '../services/cloudinary_service.dart';
 import '../models/product_model.dart';
 import '../models/order_model.dart';
 import '../models/notification_model.dart';
 
 class FarmerDashboardRepository {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final CloudinaryService _cloudinary = CloudinaryService();
 
   String getFarmerId(String uid) => uid;
 
@@ -50,14 +50,7 @@ class FarmerDashboardRepository {
     String imageUrl = '';
 
     if (imageBytes != null) {
-      final ref = _storage
-          .ref()
-          .child('product_images')
-          .child(farmerId)
-          .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-      await ref.putData(imageBytes, SettableMetadata(contentType: 'image/jpeg'));
-      imageUrl = await ref.getDownloadURL();
+      imageUrl = await _cloudinary.uploadImage(imageBytes);
     }
 
     await _db.collection('products').add({
@@ -85,14 +78,7 @@ class FarmerDashboardRepository {
     String imageUrl = existingImageUrl ?? '';
 
     if (newImageBytes != null) {
-      final ref = _storage
-          .ref()
-          .child('product_images')
-          .child(farmerId)
-          .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-      await ref.putData(newImageBytes, SettableMetadata(contentType: 'image/jpeg'));
-      imageUrl = await ref.getDownloadURL();
+      imageUrl = await _cloudinary.uploadImage(newImageBytes);
     }
 
     await _db.collection('products').doc(productId).update({
