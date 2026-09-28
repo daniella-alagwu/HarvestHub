@@ -8,20 +8,36 @@ import 'package:harvesthub/presentation/screens/auth/register_screen.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('farmer registration requires farm description and photo uploads',
-      (tester) async {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+  testWidgets(
+    'farmer registration shows only the profile photo field',
+    (tester) async {
+      await Firebase.initializeApp(
+        options:
+            DefaultFirebaseOptions.currentPlatform,
+      );
 
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: RegisterScreen(role: UserRole.farmer),
-      ),
-    );
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: RegisterScreen(
+            role: UserRole.farmer,
+          ),
+        ),
+      );
 
-    expect(find.text('Farm Description'), findsOneWidget);
-    expect(find.text('Profile Photo'), findsOneWidget);
-    expect(find.text('Farm Photo'), findsOneWidget);
-  });
+      expect(
+        find.text('Farm Description'),
+        findsOneWidget,
+      );
+
+      expect(
+        find.text('Profile Photo'),
+        findsOneWidget,
+      );
+
+      expect(
+        find.text('Farm Photo'),
+        findsNothing,
+      );
+    },
+  );
 }
