@@ -1,54 +1,34 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import '../../../data/models/product_model.dart';
 import '../../../data/repositories/farmer_dashboard_repository.dart';
-
 import '../../theme/colors/app_colors.dart';
-
 import 'farmer_add_product_screen.dart';
 
-class FarmerProductsScreen
-    extends StatefulWidget {
-  const FarmerProductsScreen({
-    super.key,
-    this.onBackToOverview,
-  });
+class FarmerProductsScreen extends StatefulWidget {
+  const FarmerProductsScreen({super.key, this.onBackToOverview});
 
-  final VoidCallback?
-      onBackToOverview;
+  final VoidCallback? onBackToOverview;
 
   @override
-  State<FarmerProductsScreen>
-      createState() =>
-          _FarmerProductsScreenState();
+  State<FarmerProductsScreen> createState() => _FarmerProductsScreenState();
 }
 
-class _FarmerProductsScreenState
-    extends State<FarmerProductsScreen> {
-  final _repo =
-      FarmerDashboardRepository();
-
+class _FarmerProductsScreenState extends State<FarmerProductsScreen> {
+  final _repo = FarmerDashboardRepository();
   String? _farmerId;
 
   @override
   void initState() {
     super.initState();
-
-    _farmerId =
-        FirebaseAuth.instance
-            .currentUser
-            ?.uid;
+    _farmerId = FirebaseAuth.instance.currentUser?.uid;
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     if (_farmerId == null) {
       return Scaffold(
-        backgroundColor:
-            AppColors.background,
+        backgroundColor: AppColors.background,
         appBar: _buildAppBar(),
         body: const Center(
           child: Text(
@@ -63,81 +43,37 @@ class _FarmerProductsScreenState
     }
 
     return Scaffold(
-      backgroundColor:
-          AppColors.background,
+      backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
       body: SafeArea(
         child: Padding(
-          padding:
-              const EdgeInsets.all(16),
-          child:
-              StreamBuilder<
-                  List<ProductModel>>(
-            stream:
-                _repo.streamProducts(
-              _farmerId!,
-            ),
-            builder:
-                (context, snap) {
-              final products =
-                  snap.data ?? [];
-
-              final lowStock =
-                  products
-                      .where(
-                        (product) =>
-                            product.stockQty <=
-                            5,
-                      )
-                      .length;
+          padding: const EdgeInsets.all(16),
+          child: StreamBuilder<List<ProductModel>>(
+            stream: _repo.streamProducts(_farmerId!),
+            builder: (context, snap) {
+              final products = snap.data ?? [];
+              final lowStock = products.where((product) => product.stockQty <= 5).length;
 
               return Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildStatsRow(
-                    products.length,
-                    lowStock,
-                  ),
-                  const SizedBox(
-                    height: 16,
-                  ),
+                  _buildStatsRow(products.length, lowStock),
+                  const SizedBox(height: 16),
                   Expanded(
                     child: products.isEmpty
                         ? const Center(
                             child: Text(
-                              'No products yet. '
-                              'Add your first one below.',
-                              style:
-                                  TextStyle(
-                                color:
-                                    AppColors
-                                        .textMuted,
-                              ),
+                              'No products yet. Add your first one below.',
+                              style: TextStyle(color: AppColors.textMuted),
                             ),
                           )
-                        : ListView
-                            .separated(
-                            itemCount:
-                                products.length,
-                            separatorBuilder:
-                                (_, __) =>
-                                    const SizedBox(
-                              height: 10,
-                            ),
-                            itemBuilder:
-                                (
-                              context,
-                              i,
-                            ) =>
-                                    _buildProductRow(
-                              products[i],
-                            ),
+                        : ListView.separated(
+                            itemCount: products.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 10),
+                            itemBuilder: (context, i) => _buildProductRow(products[i]),
                           ),
                   ),
-                  const SizedBox(
-                    height: 10,
-                  ),
+                  const SizedBox(height: 10),
                   _buildAddButton(),
                 ],
               );
@@ -148,153 +84,80 @@ class _FarmerProductsScreenState
     );
   }
 
-  PreferredSizeWidget
-      _buildAppBar() {
+  PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor:
-          AppColors.mainGreen,
+      backgroundColor: AppColors.mainGreen,
       elevation: 0,
-      automaticallyImplyLeading:
-          false,
+      automaticallyImplyLeading: false,
       leading: IconButton(
-        icon: const Icon(
-          Icons.arrow_back,
-          color: Colors.white,
-        ),
-        onPressed:
-            onBackToOverview,
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: onBackToOverview,
       ),
-      title: const Text(
-        'Inventory',
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight:
-              FontWeight.w600,
-        ),
-      ),
-      iconTheme:
-          const IconThemeData(
-        color: Colors.white,
-      ),
+      title: const Text('Inventory', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+      iconTheme: const IconThemeData(color: Colors.white),
       actions: [
-        IconButton(
-          icon: const Icon(
-            Icons.add,
-            color: Colors.white,
-          ),
-          onPressed: () =>
-              _goToAddProduct(
-            context,
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          decoration: BoxDecoration(color: AppColors.autumnRust, borderRadius: BorderRadius.circular(8)),
+          child: IconButton(
+            icon: const Icon(Icons.add, color: Colors.white),
+            onPressed: () => _goToAddProduct(context),
           ),
         ),
-        const SizedBox(
-          width: 4,
-        ),
+        const SizedBox(width: 4),
       ],
     );
   }
 
-  VoidCallback? get onBackToOverview =>
-      widget.onBackToOverview;
+  VoidCallback? get onBackToOverview => widget.onBackToOverview;
 
-  Widget _buildStatsRow(
-    int activeCount,
-    int lowStockCount,
-  ) {
+  Widget _buildStatsRow(int activeCount, int lowStockCount) {
     return Row(
       children: [
         Expanded(
           child: _MiniStat(
-            label:
-                'Active products',
-            value:
-                '$activeCount',
+            label: 'Active products',
+            value: '$activeCount',
+            noteColor: AppColors.earthySoil,
           ),
         ),
-        const SizedBox(
-          width: 10,
-        ),
+        const SizedBox(width: 10),
         Expanded(
           child: _MiniStat(
             label: 'Low stock',
-            value:
-                '$lowStockCount',
-            noteColor:
-                lowStockCount > 0
-                    ? AppColors
-                        .wheatGold
-                    : AppColors
-                        .textSecondary,
+            value: '$lowStockCount',
+            noteColor: lowStockCount > 0 ? AppColors.wheatGold : AppColors.textSecondary,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildProductRow(
-    ProductModel product,
-  ) {
-    final isOut =
-        product.stockQty <= 0;
-
-    final isLow =
-        product.stockQty > 0 &&
-        product.stockQty <= 5;
-
-    final stockColor =
-        isOut
-            ? AppColors.error
-            : (isLow
-                ? AppColors.wheatGold
-                : AppColors.textMuted);
-
-    final stockLabel =
-        isOut
-            ? 'Out of stock'
-            : '${product.stockQty} in stock';
+  Widget _buildProductRow(ProductModel product) {
+    final isOut = product.stockQty <= 0;
+    final isLow = product.stockQty > 0 && product.stockQty <= 5;
+    final stockColor = isOut ? AppColors.error : (isLow ? AppColors.wheatGold : AppColors.textMuted);
+    final stockLabel = isOut ? 'Out of stock' : '${product.stockQty} in stock';
 
     return Container(
-      padding:
-          const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color:
-            AppColors.surface,
-        border: Border.all(
-          color: AppColors.border,
-        ),
-        borderRadius:
-            BorderRadius.circular(12),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
           GestureDetector(
-            onTap: () =>
-                _goToEditProduct(
-              context,
-              product,
-            ),
+            onTap: () => _goToEditProduct(context, product),
             child: Container(
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color:
-                    AppColors.softGreen,
-                borderRadius:
-                    BorderRadius.circular(
-                  8,
-                ),
-                image: product
-                            .imageUrl
-                            ?.isNotEmpty ==
-                        true
-                    ? DecorationImage(
-                        image:
-                            NetworkImage(
-                          product
-                              .imageUrl!,
-                        ),
-                        fit: BoxFit.cover,
-                      )
+                color: AppColors.softGreen,
+                borderRadius: BorderRadius.circular(8),
+                image: product.imageUrl?.isNotEmpty == true
+                    ? DecorationImage(image: NetworkImage(product.imageUrl!), fit: BoxFit.cover)
                     : null,
               ),
               child: product.imageUrl
@@ -308,20 +171,12 @@ class _FarmerProductsScreenState
                   : null,
             ),
           ),
-          const SizedBox(
-            width: 10,
-          ),
+          const SizedBox(width: 10),
           Expanded(
             child: GestureDetector(
-              onTap: () =>
-                  _goToEditProduct(
-                context,
-                product,
-              ),
+              onTap: () => _goToEditProduct(context, product),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     product.itemName,
@@ -346,13 +201,7 @@ class _FarmerProductsScreenState
                   ),
                   Text(
                     stockLabel,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight:
-                          FontWeight.w600,
-                      color:
-                          stockColor,
-                    ),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: stockColor),
                   ),
                 ],
               ),
@@ -405,23 +254,14 @@ class _FarmerProductsScreenState
     );
   }
 
-  Future<void> _confirmDelete(
-    ProductModel product,
-  ) async {
-    final confirm =
-        await showDialog<bool>(
+  Future<void> _confirmDelete(ProductModel product) async {
+    final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) =>
-          AlertDialog(
-        title: const Text(
-          'Remove product?',
-        ),
-        content: Text(
-          'This will remove '
-          '"${product.itemName}" '
-          'from your listings.',
-        ),
+      builder: (context) => AlertDialog(
+        title: const Text('Remove product?'),
+        content: Text('This will remove "${product.itemName}" from your listings.'),
         actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           TextButton(
             onPressed: () =>
                 Navigator.pop(
@@ -450,9 +290,7 @@ class _FarmerProductsScreenState
     );
 
     if (confirm == true) {
-      await _repo.deleteProduct(
-        product.productId,
-      );
+      await _repo.deleteProduct(product.productId);
     }
   }
 
@@ -460,97 +298,50 @@ class _FarmerProductsScreenState
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: () =>
-            _goToAddProduct(
-          context,
-        ),
-        icon: const Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 18,
-        ),
-        label: const Text(
-          'Add new product',
-        ),
-        style:
-            ElevatedButton.styleFrom(
-          backgroundColor:
-              AppColors.deepGreen,
-          foregroundColor:
-              Colors.white,
-          padding:
-              const EdgeInsets.symmetric(
-            vertical: 14,
-          ),
-          shape:
-              RoundedRectangleBorder(
-            borderRadius:
-                BorderRadius.circular(
-              12,
-            ),
-          ),
+        onPressed: () => _goToAddProduct(context),
+        icon: const Icon(Icons.add, color: Colors.white, size: 18),
+        label: const Text('Add new product'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.deepGreen,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );
   }
 
-  void _goToAddProduct(
-    BuildContext context,
-  ) {
+  void _goToAddProduct(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) =>
-            const FarmerAddProductScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const FarmerAddProductScreen()),
     );
   }
 
-  void _goToEditProduct(
-    BuildContext context,
-    ProductModel product,
-  ) {
+  void _goToEditProduct(BuildContext context, ProductModel product) {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) =>
-            FarmerAddProductScreen(
-          existingProduct: product,
-        ),
-      ),
+      MaterialPageRoute(builder: (context) => FarmerAddProductScreen(existingProduct: product)),
     );
   }
 }
 
-class _MiniStat
-    extends StatelessWidget {
-  const _MiniStat({
-    required this.label,
-    required this.value,
-    this.noteColor,
-  });
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({required this.label, required this.value, this.noteColor});
 
   final String label;
   final String value;
   final Color? noteColor;
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Container(
-      padding:
-          const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color:
-            AppColors.surface,
-        border: Border.all(
-          color: AppColors.border,
-        ),
-        borderRadius:
-            BorderRadius.circular(10),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
@@ -565,15 +356,7 @@ class _MiniStat
           ),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight:
-                  FontWeight.bold,
-              color:
-                  noteColor ??
-                      AppColors
-                          .textPrimary,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: noteColor ?? AppColors.textPrimary),
           ),
         ],
       ),
