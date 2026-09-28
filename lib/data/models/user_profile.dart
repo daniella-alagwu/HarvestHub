@@ -10,6 +10,7 @@ class UserProfile {
     this.address,
     this.pickupLocation,
     this.emailVerified = false,
+    this.createdAt,
   });
 
   final String uid;
@@ -20,6 +21,7 @@ class UserProfile {
   final String? address;
   final String? pickupLocation;
   final bool emailVerified;
+  final DateTime? createdAt;
 
   factory UserProfile.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? const {};
@@ -32,6 +34,7 @@ class UserProfile {
       address: data['address'] as String?,
       pickupLocation: data['pickup_location'] as String?,
       emailVerified: (data['email_verified'] as bool?) ?? false,
+      createdAt: (data['created_at'] as Timestamp?)?.toDate(),
     );
   }
 }
