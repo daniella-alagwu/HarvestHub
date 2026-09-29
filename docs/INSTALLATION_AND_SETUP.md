@@ -2,7 +2,7 @@ HarvestHub — Installation Guide
 
 1. Prerequisites
 
-Install a Flutter SDK compatible with the project's Dart constraint and a development environment such as Android Studio or Visual Studio Code.
+Install a Flutter SDK compatible with the project's Dart constraint and a development environment such as Android Studio or Visual Studio Code. Tested and run correctly on JAVA 21 on the windows OS.
 
 Also ensure:
 
@@ -24,13 +24,7 @@ flutter pub get
 
 Create a .env file using the values documented in lib/.env.example.
 
-The current application may use values including:
-
-GEMINI_API_KEY=
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_UPLOAD_PRESET=
-
-Do not commit real credentials.
+Fill up with values from the .env.example
 
 5. Firebase
 
