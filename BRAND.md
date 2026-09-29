@@ -107,7 +107,7 @@ On cold launch, the mark **assembles itself** rather than appearing as a
 static image:
 
 1. **Swoosh leaf** fades and scales in from behind (0–45% of the timeline).
-2. **Sprout leaflets** slide/fade in above the "H" (25–65%).
+2. **Sprout little leaflets** slide/fade in above the "H" (25–65%).
 3. **Wordmark** slides up and fades in beneath (50–85%).
 4. The hand-assembled pieces **crossfade into the real
    `logo_full_combined.png`** file (80–100%) — guaranteeing the resting
@@ -159,5 +159,5 @@ assets/
 └── splash_screen/                # logo layers + combined logo
 ```
 
-Full project-wide blueprint (all tiers, Firebase collections, screen
+Full project-wide blueprint (all of our tiers, Firebase collections,and screen
 inventory) is in `PROJECT_BLUEPRINT.md`.
