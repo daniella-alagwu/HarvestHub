@@ -831,7 +831,7 @@ class _AttentionSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionTitle(title: 'Needs your attention'),
+        const _SectionTitle(title: 'Notifications'),
         const SizedBox(height: 10),
         if (allClear)
           Container(

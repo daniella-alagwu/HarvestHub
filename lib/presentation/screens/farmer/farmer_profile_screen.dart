@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../application/wishlist/wishlist_provider.dart';
 import '../../../data/models/farmer_account.dart';
 import '../../../data/models/order_model.dart';
 import '../../../data/models/product_model.dart';
@@ -63,8 +65,18 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
 
   String _memberSince(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[date.month - 1]} ${date.year}';
   }
@@ -193,8 +205,8 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Log out',
-                style: TextStyle(color: AppColors.error)),
+            child:
+                const Text('Log out', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -321,8 +333,8 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
                 if (snapshot.connectionState == ConnectionState.waiting &&
                     !snapshot.hasData) {
                   return const Center(
-                    child: CircularProgressIndicator(
-                        color: AppColors.mainGreen),
+                    child:
+                        CircularProgressIndicator(color: AppColors.mainGreen),
                   );
                 }
                 if (snapshot.hasError || !snapshot.hasData) {
@@ -362,7 +374,10 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
                       productsStream: _productsStream!,
                       ordersStream: _ordersStream!,
                       rating: account.rating,
+                      farmerId: account.uid,
                     ),
+                    const SizedBox(height: 16),
+                    _FollowersPanel(farmerId: account.uid),
                     const SizedBox(height: 16),
                     _SectionCard(
                       title: 'Farm details',
@@ -514,7 +529,8 @@ class _HeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasPhoto = account.hasAvatar;
-    final name = account.name.trim().isEmpty ? 'HarvestHub farmer' : account.name;
+    final name =
+        account.name.trim().isEmpty ? 'HarvestHub farmer' : account.name;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -590,8 +606,8 @@ class _HeaderCard extends StatelessWidget {
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.headingMedium
-                      .copyWith(color: Colors.white),
+                  style:
+                      AppTextStyles.headingMedium.copyWith(color: Colors.white),
                 ),
                 if (account.farmName.trim().isNotEmpty) ...[
                   const SizedBox(height: 2),
@@ -684,11 +700,13 @@ class _StatsRow extends StatelessWidget {
     required this.productsStream,
     required this.ordersStream,
     required this.rating,
+    required this.farmerId,
   });
 
   final Stream<List<ProductModel>> productsStream;
   final Stream<List<OrderModel>> ordersStream;
   final double rating;
+  final String farmerId;
 
   @override
   Widget build(BuildContext context) {
@@ -700,36 +718,115 @@ class _StatsRow extends StatelessWidget {
           builder: (context, orderSnap) {
             final products = productSnap.data?.length ?? 0;
             final orders = orderSnap.data?.length ?? 0;
-            return Row(
-              children: [
-                Expanded(
-                  child: _StatTile(
-                    value: '$products',
-                    label: 'Products',
-                    icon: Icons.inventory_2_outlined,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _StatTile(
-                    value: '$orders',
-                    label: 'Orders',
-                    icon: Icons.receipt_long_outlined,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _StatTile(
-                    value: rating > 0 ? rating.toStringAsFixed(1) : '—',
-                    label: 'Rating',
-                    icon: Icons.star_outline_rounded,
-                  ),
-                ),
-              ],
+            final followersCount = context.watch<WishlistProvider>();
+            return FutureBuilder<int>(
+              future: followersCount.followersCountFor(farmerId),
+              builder: (context, followerSnap) {
+                final followers = followerSnap.data ?? 0;
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _StatTile(
+                        value: '$products',
+                        label: 'Products',
+                        icon: Icons.inventory_2_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _StatTile(
+                        value: '$orders',
+                        label: 'Orders',
+                        icon: Icons.receipt_long_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _StatTile(
+                        value: '$followers',
+                        label: 'Followers',
+                        icon: Icons.people_outline_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _StatTile(
+                        value: rating > 0 ? rating.toStringAsFixed(1) : '—',
+                        label: 'Rating',
+                        icon: Icons.star_outline_rounded,
+                      ),
+                    ),
+                  ],
+                );
+              },
             );
           },
         );
       },
+    );
+  }
+}
+
+class _FollowersPanel extends StatelessWidget {
+  const _FollowersPanel({required this.farmerId});
+
+  final String farmerId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: FutureBuilder<List<String>>(
+        future: context
+            .read<WishlistProvider>()
+            .customerNamesFollowingFarmer(farmerId),
+        builder: (context, snapshot) {
+          final names = snapshot.data ?? const <String>[];
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.favorite_border_rounded,
+                      size: 18, color: AppColors.mainGreen),
+                  const SizedBox(width: 8),
+                  Text('Customers following you',
+                      style: AppTextStyles.headingMedium),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (names.isEmpty)
+                Text(
+                  'No customers have followed your farm yet.',
+                  style: AppTextStyles.bodyMuted,
+                )
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: names
+                      .map((name) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: AppColors.softGreen,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: Text(name,
+                                style: AppTextStyles.caption
+                                    .copyWith(fontWeight: FontWeight.w600)),
+                          ))
+                      .toList(),
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -760,7 +857,8 @@ class _StatTile extends StatelessWidget {
           const SizedBox(height: 6),
           Text(value, style: AppTextStyles.headingMedium),
           const SizedBox(height: 2),
-          Text(label, textAlign: TextAlign.center, style: AppTextStyles.caption),
+          Text(label,
+              textAlign: TextAlign.center, style: AppTextStyles.caption),
         ],
       ),
     );

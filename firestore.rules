@@ -20,6 +20,13 @@ service cloud.firestore {
       return hasRole('admin');
     }
 
+    function isSuperAdmin() {
+      return signedIn()
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.get('level', '') == 'super'
+        && userData().get('role', '') == 'admin'
+        && userData().get('active_status', true) == true;
+    }
+
     function isFarmer() {
       return hasRole('farmer');
     }
@@ -44,9 +51,17 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow create: if signedIn()
-        && request.auth.uid == userId
-        && request.resource.data.role in ['customer', 'farmer', 'admin']
-        && request.resource.data.get('active_status', true) == true;
+        && (
+          (
+            request.auth.uid == userId
+            && request.resource.data.role in ['customer', 'farmer']
+            && request.resource.data.get('active_status', true) == true
+          ) || (
+            isSuperAdmin()
+            && request.resource.data.role == 'admin'
+            && request.resource.data.get('active_status', true) == true
+          )
+        );
 
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
 
@@ -63,7 +78,10 @@ service cloud.firestore {
 
     match /admins/{adminId} {
       allow read: if signedIn() && (request.auth.uid == adminId || isAdmin());
-      allow create: if signedIn() && request.auth.uid == adminId;
+      allow create: if isSuperAdmin()
+        && request.resource.data.get('user_id', '') == adminId
+        && request.resource.data.get('active_status', true) == true
+        && request.resource.data.get('level', '') in ['super', 'standard'];
       allow update: if isAdmin() && !changedKeys().hasAny(['user_id']);
       allow delete: if isAdmin();
     }
@@ -78,6 +96,12 @@ service cloud.firestore {
       allow update: if isFarmer()
         && request.auth.uid == farmerId
         && !changedKeys().hasAny(['user_id', 'approval_status', 'active_status']);
+
+      allow update: if signedIn()
+        && changedKeys().hasOnly(['rating'])
+        && request.resource.data.get('rating', 0) is number
+        && request.resource.data.get('rating', 0) >= 0
+        && request.resource.data.get('rating', 0) <= 5;
 
       allow update: if isAdmin()
         && !changedKeys().hasAny(['user_id']);
@@ -217,7 +241,22 @@ service cloud.firestore {
     }
 
     match /follows/{userId}/farmers/{farmerId} {
-      allow read, write: if signedIn() && request.auth.uid == userId;
+      allow read: if signedIn();
+      allow get: if signedIn();
+      allow list: if signedIn();
+      allow create, update, delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /farmer_ratings/{farmerId}/ratings/{userId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.get('farmer_id', '') == farmerId
+        && request.resource.data.get('user_id', '') == userId
+        && request.resource.data.get('rating', 0) is number
+        && request.resource.data.get('rating', 0) >= 1
+        && request.resource.data.get('rating', 0) <= 5;
+      allow delete: if signedIn() && request.auth.uid == userId;
     }
   }
 }

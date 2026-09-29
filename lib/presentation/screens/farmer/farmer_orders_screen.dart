@@ -220,9 +220,15 @@ class _FarmerOrdersScreenState extends State<FarmerOrdersScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          Text('${order.itemQuantity} item(s)',
-              style:
-                  const TextStyle(fontSize: 12, color: AppColors.earthySoil)),
+          Text(
+            order.itemsSummary,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.earthySoil,
+            ),
+          ),
           const SizedBox(height: 6),
           Text(
             '${order.itemQuantity} item(s)',
