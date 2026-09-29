@@ -116,7 +116,7 @@ harvesthub/
 
 ---
 
-## 3. Screen Inventory by Role (traceable to SRS §1.6)
+## 3. Screen Inventory by Role 
 
 **Customer** — register/login, profile management, browse/search/filter,
 product details, wishlist, cart, simulated checkout, order history,
@@ -167,7 +167,7 @@ Recommended additions (not blocking, flagged for later):
 
 ---
 
-## 5. Explicit Constraints (SRS §1.5 — do not build these)
+## 5. Explicit Constraints 
 
 - No real payment gateway — checkout is simulated only.
 - No delivery/logistics functionality — pickup only.
@@ -191,7 +191,7 @@ Recommended additions (not blocking, flagged for later):
 
 ---
 
-## 7. Deliverables Checklist (SRS §1.9)
+## 7. Deliverables Checklist 
 
 - [ ] Problem Definition
 - [ ] Design Specifications
