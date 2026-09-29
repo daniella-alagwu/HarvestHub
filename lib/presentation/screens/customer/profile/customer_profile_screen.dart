@@ -1,4 +1,4 @@
-
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,8 +18,8 @@ import '../../splash/splash_screen.dart';
 import '../wishlist/wishlist_screen.dart';
 import 'edit_profile_screen.dart';
 
-const _supportEmail = 'support@harvesthub.app';
-const _supportPhone = '+234 800 000 0000';
+const _supportEmail = 'harvesthubsupport1@gmail.com';
+const _supportPhone = '08154164335';
 const _appVersion = '1.0.0';
 
 class CustomerProfileScreen extends StatefulWidget {
@@ -462,49 +462,83 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   // CONTACT
   // ─────────────────────────────────────────────
 
-  void _showContact() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+
+void _showContact() {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppColors.surface,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(20),
       ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Contact us',
-                style: AppTextStyles.headingMedium,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Questions about an order or your account? Reach out.',
-                style: AppTextStyles.bodyMuted,
-              ),
-              const SizedBox(height: 16),
-              _ContactRow(
+    ),
+    builder: (context) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Contact us',
+              style: AppTextStyles.headingMedium,
+            ),
+
+            const SizedBox(height: 6),
+
+            Text(
+              'Questions about an order or your account? Reach out.',
+              style: AppTextStyles.bodyMuted,
+            ),
+
+            const SizedBox(height: 16),
+
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () async {
+                final emailUri = Uri(
+                  scheme: 'mailto',
+                  path: _supportEmail,
+                );
+
+                if (await canLaunchUrl(emailUri)) {
+                  await launchUrl(emailUri);
+                }
+              },
+              child: _ContactRow(
                 icon: Icons.mail_outline,
                 label: 'Email',
                 value: _supportEmail,
               ),
-              const SizedBox(height: 12),
-              _ContactRow(
+            ),
+
+            const SizedBox(height: 12),
+
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () async {
+                final phoneUri = Uri(
+                  scheme: 'tel',
+                  path: _supportPhone,
+                );
+
+                if (await canLaunchUrl(phoneUri)) {
+                  await launchUrl(phoneUri);
+                }
+              },
+              child: _ContactRow(
                 icon: Icons.phone_outlined,
                 label: 'Phone',
                 value: _supportPhone,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   // ─────────────────────────────────────────────
   // BUILD
