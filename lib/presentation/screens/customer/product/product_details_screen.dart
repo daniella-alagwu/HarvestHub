@@ -304,9 +304,15 @@ class _FarmerRow extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                Text(
-                  '${farmer.rating} ★ • ${farmer.followersCount} followers',
-                  style: AppTextStyles.caption,
+                                FutureBuilder<int>(
+                  future: context.read<WishlistProvider>().followersCountFor(farmer.id),
+                  builder: (context, snapshot) {
+                    final count = snapshot.data ?? 0;
+                    return Text(
+                      '${farmer.rating} ★ • $count followers',
+                      style: AppTextStyles.caption,
+                    );
+                  },
                 ),
               ],
             ),

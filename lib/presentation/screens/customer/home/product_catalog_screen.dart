@@ -61,6 +61,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProductProvider>().load();
+      context.read<WishlistProvider>().loadFollows();
       _loadLocation();
     });
   }
@@ -380,8 +381,9 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                       return SizedBox(
                         width: 280,
 
-                        child: NearbyFarmerCard(
+                                                child: NearbyFarmerCard(
                           farmer: farmer,
+                          productCount: products.productsByFarmer(farmer.id).length,
 
                           onTap: () {
                             Navigator.of(context).push(
