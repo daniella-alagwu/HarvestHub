@@ -40,11 +40,8 @@ class FarmerAccount {
   }
 
   String get initials {
-    final parts = name
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((p) => p.isNotEmpty)
-        .toList();
+    final parts =
+        name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts.first[0].toUpperCase();
     return (parts.first[0] + parts.last[0]).toUpperCase();
@@ -65,6 +62,18 @@ class FarmerAccount {
       return '';
     }
 
+    double parseRating(Map<String, dynamic> m, List<String> keys) {
+      for (final key in keys) {
+        final value = m[key];
+        if (value is num) return value.toDouble();
+        if (value is String) {
+          final parsed = double.tryParse(value);
+          if (parsed != null) return parsed;
+        }
+      }
+      return 0;
+    }
+
     final avatar = text(f, ['avatar_url', 'profile_image_url']).isNotEmpty
         ? text(f, ['avatar_url', 'profile_image_url'])
         : text(u, ['avatar_url', 'photo_url']);
@@ -80,7 +89,8 @@ class FarmerAccount {
       tagline: text(f, ['tagline']),
       avatarUrl: avatar,
       farmImageUrl: text(f, ['farm_image_url', 'farm_photo_url']),
-      rating: (f['rating'] as num?)?.toDouble() ?? 0,
+      rating: parseRating(
+          f, ['rating', 'average_rating', 'avg_rating', 'rating_value']),
       emailVerified: (u['email_verified'] as bool?) ?? false,
       createdAt: (u['created_at'] as Timestamp?)?.toDate(),
     );

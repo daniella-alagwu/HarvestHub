@@ -52,6 +52,10 @@ class Farmer {
       for (final key in keys) {
         final value = data[key];
         if (value is num) return value.toDouble();
+        if (value is String) {
+          final parsed = double.tryParse(value);
+          if (parsed != null) return parsed;
+        }
       }
       return 0;
     }
@@ -72,7 +76,8 @@ class Farmer {
         ['market_name', 'Market_Name', 'marketName', 'market_location'],
         fallback: 'Local Market',
       ),
-      rating: number(['rating', 'Rating']),
+      rating: number(
+          ['rating', 'average_rating', 'avg_rating', 'rating_value', 'Rating']),
       distanceMiles:
           number(['distance_miles', 'Distance_Miles', 'distanceMiles']),
       description: text(['description', 'Description']),
