@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../../../application/orders/order_provider.dart';
 import '../../../../data/models/order_model.dart';
 import '../../../../data/repositories/market_repository.dart';
 import '../../../theme/colors/app_colors.dart';
 import '../../../theme/text_styles.dart';
 import '../../../widgets/empty_state.dart';
-import 'package:provider/provider.dart';
-import '../../../../application/orders/order_provider.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
   const OrderHistoryScreen({super.key});
@@ -46,7 +47,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen>
               style: AppTextStyles.headingLarge.copyWith(letterSpacing: 4),
             ),
             const SizedBox(height: 8),
-            Text('Show this to the farmer at pickup.', style: AppTextStyles.bodyMuted),
+            Text(
+              'Show this to the farmer at pickup.',
+              style: AppTextStyles.bodyMuted,
+            ),
           ],
         ),
         actions: [
@@ -61,13 +65,16 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen>
 
   Future<void> _changeSlot(Order order) async {
     final market = await _marketRepository.fetchDefault();
+
     if (!mounted) return;
 
     final newSlotLabel = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
       ),
       builder: (context) {
         return SafeArea(
@@ -78,13 +85,19 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen>
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('Choose a new pickup slot', style: AppTextStyles.headingMedium),
+                  child: Text(
+                    'Choose a new pickup slot',
+                    style: AppTextStyles.headingMedium,
+                  ),
                 ),
               ),
               ...market.pickupSlots.map(
                 (slot) => ListTile(
                   enabled: slot.isAvailable,
-                  leading: const Icon(Icons.schedule, color: AppColors.mainGreen),
+                  leading: const Icon(
+                    Icons.schedule,
+                    color: AppColors.mainGreen,
+                  ),
                   title: Text(slot.label),
                   onTap: () => Navigator.of(context).pop(slot.label),
                 ),
@@ -97,9 +110,18 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen>
     );
 
     if (newSlotLabel == null || !mounted) return;
-    context.read<OrderProvider>().updateSlot(order.id, newSlotLabel);
+
+    context.read<OrderProvider>().updateSlot(
+          order.id,
+          newSlotLabel,
+        );
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Pickup slot updated to $newSlotLabel')),
+      SnackBar(
+        content: Text(
+          'Pickup slot updated to $newSlotLabel',
+        ),
+      ),
     );
   }
 
@@ -112,17 +134,36 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen>
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('My orders'),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: AppColors.mainGreen,
-          unselectedLabelColor: AppColors.textSecondary,
-          indicatorColor: AppColors.mainGreen,
-          labelStyle: AppTextStyles.bodyRegular.copyWith(fontWeight: FontWeight.w600),
-          tabs: const [Tab(text: 'Active'), Tab(text: 'Past orders')],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(52),
+          child: Container(
+            color: Colors.white,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: AppColors.mainGreen,
+              unselectedLabelColor: AppColors.textPrimary,
+              indicatorColor: AppColors.mainGreen,
+              indicatorWeight: 3,
+              labelStyle: AppTextStyles.bodyRegular.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+              unselectedLabelStyle: AppTextStyles.bodyRegular.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              tabs: const [
+                Tab(text: 'Active'),
+                Tab(text: 'Past orders'),
+              ],
+            ),
+          ),
         ),
       ),
       body: orders.isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.mainGreen))
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.mainGreen,
+              ),
+            )
           : TabBarView(
               controller: _tabController,
               children: [
@@ -160,21 +201,24 @@ class _OrderList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (orders.isEmpty) {
-      return EmptyState(icon: Icons.receipt_long_outlined, title: emptyLabel);
+      return EmptyState(
+        icon: Icons.receipt_long_outlined,
+        title: emptyLabel,
+      );
     }
+
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       itemCount: orders.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 14),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final order = orders[index];
-        return order.currentStep < Order.steps.length - 1 || index == 0
-            ? _ActiveOrderCard(
-                order: order,
-                onViewCode: () => onViewCode(order),
-                onChangeSlot: () => onChangeSlot(order),
-              )
-            : _CompactOrderRow(order: order);
+
+        return _ActiveOrderCard(
+          order: order,
+          onViewCode: () => onViewCode(order),
+          onChangeSlot: () => onChangeSlot(order),
+        );
       },
     );
   }
@@ -194,55 +238,152 @@ class _ActiveOrderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: AppColors.border,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ORDER HEADER
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(order.title, style: AppTextStyles.bodyRegular.copyWith(fontWeight: FontWeight.w700)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.wheatGold.withValues(alpha: 0.22),
-                  borderRadius: BorderRadius.circular(20),
-                ),
+              Expanded(
                 child: Text(
-                  order.statusBadge,
-                  style: AppTextStyles.caption.copyWith(color: AppColors.earthySoil, fontWeight: FontWeight.w600),
+                  order.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodyRegular.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Container(
+                  constraints: const BoxConstraints(
+                    maxWidth: 110,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.wheatGold.withValues(
+                      alpha: 0.22,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    order.statusBadge,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.earthySoil,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 2),
-          Text(order.marketName, style: AppTextStyles.bodyMuted),
-          const SizedBox(height: 14),
-          _ProgressSteps(currentStep: order.currentStep),
-          const SizedBox(height: 14),
-          Text(order.scheduledLabel, style: AppTextStyles.bodyRegular.copyWith(fontWeight: FontWeight.w600)),
+
           const SizedBox(height: 4),
-          Text(order.itemsSummary, style: AppTextStyles.bodyMuted),
+
+          // MARKET
+          Text(
+            order.marketName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.bodyMuted,
+          ),
+
           const SizedBox(height: 14),
+
+          // PROGRESS
+          _ProgressSteps(
+            currentStep: order.currentStep,
+          ),
+
+          const SizedBox(height: 14),
+
+          // PICKUP DATE
+          Text(
+            order.scheduledLabel,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.bodyRegular.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(height: 5),
+
+          // ITEMS
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 8,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              order.itemsSummary,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.bodyMuted,
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // BUTTONS
           Row(
             children: [
               Expanded(
                 child: ElevatedButton(
                   onPressed: onViewCode,
-                  child: const Text('View pickup code'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                    ),
+                  ),
+                  child: const Text(
+                    'View pickup code',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton(
                   onPressed: onChangeSlot,
-                  style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.border)),
-                  child: const Text('Change slot'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                    ),
+                    side: const BorderSide(
+                      color: AppColors.border,
+                    ),
+                  ),
+                  child: const Text(
+                    'Change slot',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],
@@ -254,72 +395,36 @@ class _ActiveOrderCard extends StatelessWidget {
 }
 
 class _ProgressSteps extends StatelessWidget {
-  const _ProgressSteps({required this.currentStep});
+  const _ProgressSteps({
+    required this.currentStep,
+  });
 
   final int currentStep;
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: List.generate(Order.steps.length, (index) {
-        final isDone = index <= currentStep;
-        return Expanded(
-          child: Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 4,
-                  margin: EdgeInsets.only(left: index == 0 ? 0 : 4, right: index == Order.steps.length - 1 ? 0 : 4),
-                  decoration: BoxDecoration(
-                    color: isDone ? AppColors.mainGreen : AppColors.border,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
+      children: List.generate(
+        Order.steps.length,
+        (index) {
+          final isDone = index <= currentStep;
+
+          return Expanded(
+            child: Container(
+              height: 5,
+              margin: EdgeInsets.only(
+                left: index == 0 ? 0 : 3,
+                right: index == Order.steps.length - 1 ? 0 : 3,
               ),
-            ],
-          ),
-        );
-      }),
-    );
-  }
-}
-
-class _CompactOrderRow extends StatelessWidget {
-  const _CompactOrderRow({required this.order});
-
-  final Order order;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(color: AppColors.softGreen, shape: BoxShape.circle),
-            child: const Icon(Icons.shopping_basket_outlined, color: AppColors.mainGreen, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(order.title, style: AppTextStyles.bodyRegular.copyWith(fontWeight: FontWeight.w600)),
-                Text(order.scheduledLabel, style: AppTextStyles.caption.copyWith(color: AppColors.success)),
-              ],
+              decoration: BoxDecoration(
+                color: isDone
+                    ? AppColors.mainGreen
+                    : AppColors.border,
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
-          ),
-          Text(order.itemsSummary, style: AppTextStyles.caption),
-          const SizedBox(width: 6),
-          const Icon(Icons.chevron_right, color: AppColors.textSecondary),
-        ],
+          );
+        },
       ),
     );
   }

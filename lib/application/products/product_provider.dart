@@ -54,9 +54,8 @@ class ProductProvider extends ChangeNotifier {
     return values;
   }
 
-  List<Product> get freshToday => _allProducts
+  List<Product> get freshToday => filteredProducts
       .where((product) => product.isInStock)
-      .take(4)
       .toList();
 
   List<Product> productsByFarmer(
@@ -89,7 +88,8 @@ class ProductProvider extends ChangeNotifier {
 
       final matchesCategory =
           _selectedCategory == null ||
-          product.category == _selectedCategory;
+          (product.category ?? '').trim().toLowerCase() ==
+              _selectedCategory!.trim().toLowerCase();
 
       return matchesQuery && matchesCategory;
     }).toList();

@@ -36,7 +36,17 @@ class Product {
   double get price => pricePerUnit;
   int get quantity => stockQty;
 
-  String get priceLabel => '₦${pricePerUnit.toStringAsFixed(2)} / $unit';
+  String get priceLabel => '${formatNaira(pricePerUnit)} / $unit';
+
+  static String formatNaira(num value) {
+    final fixed = value.toStringAsFixed(2);
+    final parts = fixed.split('.');
+    final integer = parts[0].replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (_) => ',',
+    );
+    return '₦$integer.${parts[1]}';
+  }
 
   bool get isInStock => stockQty > 0;
 
