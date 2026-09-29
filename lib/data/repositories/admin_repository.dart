@@ -39,6 +39,13 @@ class AdminRepository {
   CollectionReference<Map<String, dynamic>> get _content =>
       _firestore.collection('app_content');
 
+  StreamController<Map<String, dynamic>>? _dashboardReportController;
+  final _dashboardReportSubscriptions = <StreamSubscription<Object?>>[];
+  final _dashboardReportReadySources = <String>{};
+  Map<String, dynamic>? _cachedDashboardReport;
+  int _dashboardReportGeneration = 0;
+  int _dashboardReportRefreshVersion = 0;
+
   Future<AdminProfile?> getCurrentAdmin() async {
     final user = _auth.currentUser;
     if (user == null) return null;
@@ -144,51 +151,82 @@ class AdminRepository {
           );
 
   Stream<Map<String, dynamic>> watchDashboardReport() {
-    late final StreamController<Map<String, dynamic>> controller;
-    final subscriptions = <StreamSubscription<Object?>>[];
-    var readySources = 0;
-    var refreshVersion = 0;
+    _dashboardReportController ??= StreamController.broadcast(
+      onListen: _startDashboardReport,
+      onCancel: () => unawaited(_stopDashboardReport()),
+    );
+    return _dashboardReportController!.stream;
+  }
 
-    Future<void> refresh() async {
-      if (readySources < 3) return;
-      final version = ++refreshVersion;
-      try {
-        final report = await getDashboardReport();
-        if (!controller.isClosed && version == refreshVersion) {
-          controller.add(report);
+  void _startDashboardReport() {
+    final controller = _dashboardReportController;
+    if (controller == null || controller.isClosed) return;
+
+    final generation = ++_dashboardReportGeneration;
+    _dashboardReportReadySources.clear();
+    final cachedReport = _cachedDashboardReport;
+    if (cachedReport != null) controller.add(cachedReport);
+
+    _trackDashboardReportSource(
+        'orders', _orders.snapshots(), generation);
+    _trackDashboardReportSource(
+        'farmers', _farmers.snapshots(), generation);
+    _trackDashboardReportSource(
+        'products', _products.snapshots(), generation);
+  }
+
+  void _trackDashboardReportSource<T>(
+      String source, Stream<T> stream, int generation) {
+    _dashboardReportSubscriptions.add(stream.listen(
+      (_) {
+        if (generation != _dashboardReportGeneration) return;
+        _dashboardReportReadySources.add(source);
+        if (_dashboardReportReadySources.length == 3) {
+          unawaited(_refreshDashboardReport(generation));
         }
-      } catch (error, stackTrace) {
-        if (!controller.isClosed && version == refreshVersion) {
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        final controller = _dashboardReportController;
+        if (generation == _dashboardReportGeneration &&
+            controller != null &&
+            controller.hasListener) {
           controller.addError(error, stackTrace);
         }
+      },
+    ));
+  }
+
+  Future<void> _refreshDashboardReport(int generation) async {
+    final controller = _dashboardReportController;
+    if (controller == null || !controller.hasListener) return;
+    final version = ++_dashboardReportRefreshVersion;
+    try {
+      final report = await getDashboardReport();
+      if (generation == _dashboardReportGeneration &&
+          version == _dashboardReportRefreshVersion &&
+          controller.hasListener) {
+        _cachedDashboardReport = report;
+        controller.add(report);
+      }
+    } catch (error, stackTrace) {
+      if (generation == _dashboardReportGeneration &&
+          version == _dashboardReportRefreshVersion &&
+          controller.hasListener) {
+        controller.addError(error, stackTrace);
       }
     }
+  }
 
-    void track<T>(Stream<T> stream) {
-      subscriptions.add(stream.listen(
-        (_) {
-          readySources++;
-          if (readySources >= 3) refresh();
-        },
-        onError: (Object error, StackTrace stackTrace) {
-          if (!controller.isClosed) controller.addError(error, stackTrace);
-        },
-      ));
+  Future<void> _stopDashboardReport() async {
+    ++_dashboardReportGeneration;
+    ++_dashboardReportRefreshVersion;
+    _dashboardReportReadySources.clear();
+    final subscriptions = List<StreamSubscription<Object?>>.of(
+        _dashboardReportSubscriptions);
+    _dashboardReportSubscriptions.clear();
+    for (final subscription in subscriptions) {
+      await subscription.cancel();
     }
-
-    controller = StreamController<Map<String, dynamic>>(
-      onListen: () {
-        track(_orders.snapshots());
-        track(_farmers.snapshots());
-        track(_products.snapshots());
-      },
-      onCancel: () async {
-        for (final subscription in subscriptions) {
-          await subscription.cancel();
-        }
-      },
-    );
-    return controller.stream;
   }
 
   Stream<Map<String, dynamic>> watchContent(String pageId) =>
@@ -228,6 +266,8 @@ class AdminRepository {
     var revenue = 0.0;
     for (final doc in orders) {
       final data = doc.data();
+      final status = data['status']?.toString().toLowerCase() ?? '';
+      if (status == 'cancelled' || status == 'canceled') continue;
       final amount = _asDouble(data['total_price'] ?? data['total']);
       final market = (data['market_name'] as String?)?.trim();
       final farmerId = data['farmer_id'] as String? ?? '';
@@ -236,7 +276,10 @@ class AdminRepository {
         revenueByMarket.update(market, (total) => total + amount,
             ifAbsent: () => amount);
       }
-      ordersByFarmer.update(farmerId, (total) => total + 1, ifAbsent: () => 1);
+      if (farmerId.isNotEmpty) {
+        ordersByFarmer.update(
+            farmerId, (total) => total + 1, ifAbsent: () => 1);
+      }
     }
 
     final farmerNameById = <String, String>{};
@@ -634,8 +677,12 @@ class AdminRepository {
       }
       rethrow;
     } finally {
-      await secondaryAuth.signOut();
-      await adminApp.delete();
+      try {
+        await secondaryAuth.signOut();
+      } catch (_) {}
+      try {
+        await adminApp.delete();
+      } catch (_) {}
     }
   }
 

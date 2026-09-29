@@ -6,18 +6,23 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function userData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    function userPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function adminPath(uid) {
+      return /databases/$(database)/documents/admins/$(uid);
+    }
+
+    function userData(uid) {
+      return get(userPath(uid)).data;
     }
 
     function hasRole(role) {
       return signedIn()
-        && userData().get('role', '') == role
-        && userData().get('active_status', true) == true;
-    }
-
-    function isAdmin() {
-      return hasRole('admin');
+        && exists(userPath(request.auth.uid))
+        && userData(request.auth.uid).get('role', '') == role
+        && userData(request.auth.uid).get('active_status', true) == true;
     }
 
     function isFarmer() {
@@ -26,6 +31,26 @@ service cloud.firestore {
 
     function isCustomer() {
       return hasRole('customer');
+    }
+
+    function isActiveAdmin() {
+      return hasRole('admin')
+        && exists(adminPath(request.auth.uid))
+        && get(adminPath(request.auth.uid)).data.get('active_status', false) == true;
+    }
+
+    function isSuperAdmin() {
+      return isActiveAdmin()
+        && get(adminPath(request.auth.uid)).data.get('level', '') == 'super';
+    }
+
+    function hasAdminPermission(permission) {
+      return isSuperAdmin()
+        || (isActiveAdmin()
+          && get(adminPath(request.auth.uid)).data.get('level', '') == 'standard'
+          && get(adminPath(request.auth.uid)).data.get('permissions', []) is list
+          && get(adminPath(request.auth.uid)).data.get('permissions', [])
+              .hasAny([permission]));
     }
 
     function changedKeys() {
@@ -44,28 +69,83 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow create: if signedIn()
-        && request.auth.uid == userId
-        && request.resource.data.role in ['customer', 'farmer', 'admin']
-        && request.resource.data.get('active_status', true) == true;
+        && ((request.auth.uid == userId
+            && request.resource.data.role in ['customer', 'farmer']
+            && request.resource.data.get('active_status', true) == true)
+          || (isSuperAdmin()
+            && request.resource.data.role == 'admin'
+            && request.resource.data.get('active_status', false) == true
+            && getAfter(adminPath(userId)).data.user_id == userId));
 
-      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow get: if signedIn() && request.auth.uid == userId;
+      allow get: if isActiveAdmin()
+        && ((resource.data.role == 'customer'
+              && hasAdminPermission('customers.manage'))
+          || (resource.data.role == 'farmer'
+              && hasAdminPermission('farmers.manage'))
+          || (resource.data.role == 'admin' && isSuperAdmin()));
+      allow list: if isActiveAdmin()
+        && ((resource.data.role == 'customer'
+              && hasAdminPermission('customers.manage'))
+          || (resource.data.role == 'farmer'
+              && hasAdminPermission('farmers.manage'))
+          || (resource.data.role == 'admin' && isSuperAdmin()));
 
       allow update: if signedIn()
         && request.auth.uid == userId
         && !changedKeys().hasAny(['role', 'active_status']);
+      allow update: if isActiveAdmin()
+        && ((resource.data.role == 'customer'
+              && hasAdminPermission('customers.manage')
+              && request.resource.data.role == resource.data.role
+              && changedKeys().hasOnly([
+                'name', 'phone', 'address', 'pickup_location', 'active_status'
+              ]))
+          || (resource.data.role == 'farmer'
+              && hasAdminPermission('farmers.manage')
+              && request.resource.data.role == resource.data.role
+              && changedKeys().hasOnly([
+                'name', 'phone', 'address', 'pickup_location', 'active_status'
+              ]))
+          || (resource.data.role == 'admin'
+              && isSuperAdmin()
+              && request.resource.data.role == resource.data.role
+              && changedKeys().hasOnly(['active_status'])));
 
-      allow update: if isAdmin()
-        && !changedKeys().hasAny(['role'])
-        && request.resource.data.role == resource.data.role;
-
-      allow delete: if isAdmin();
+      allow delete: if isActiveAdmin()
+        && ((resource.data.role == 'customer'
+              && hasAdminPermission('customers.manage'))
+          || (resource.data.role == 'farmer'
+              && hasAdminPermission('farmers.manage')));
     }
 
     match /admins/{adminId} {
-      allow read: if signedIn() && (request.auth.uid == adminId || isAdmin());
-      allow create: if signedIn() && request.auth.uid == adminId;
-      allow update: if isAdmin() && !changedKeys().hasAny(['user_id']);
-      allow delete: if isAdmin();
+      allow get: if signedIn()
+        && (request.auth.uid == adminId || isSuperAdmin());
+      allow list: if isSuperAdmin();
+      allow create: if isSuperAdmin()
+        && request.resource.data.user_id == adminId
+        && request.resource.data.level in ['standard', 'super']
+        && request.resource.data.active_status == true
+        && request.resource.data.permissions is list
+        && getAfter(userPath(adminId)).data.role == 'admin';
+      allow update: if isSuperAdmin()
+        && request.resource.data.user_id == resource.data.user_id
+        && changedKeys().hasOnly([
+          'name', 'email', 'level', 'permissions', 'active_status'
+        ]);
+      allow delete: if false;
+    }
+
+    match /audit_logs/{logId} {
+      allow create: if isActiveAdmin()
+        && request.resource.data.admin_id == request.auth.uid
+        && request.resource.data.action is string
+        && request.resource.data.target_type is string
+        && request.resource.data.target_id is string
+        && request.resource.data.timestamp == request.time;
+      allow get, list: if isSuperAdmin();
+      allow update, delete: if false;
     }
 
     match /farmers/{farmerId} {
@@ -79,20 +159,24 @@ service cloud.firestore {
         && request.auth.uid == farmerId
         && !changedKeys().hasAny(['user_id', 'approval_status', 'active_status']);
 
-      allow update: if isAdmin()
+      allow update: if isActiveAdmin()
+        && hasAdminPermission('farmers.manage')
         && !changedKeys().hasAny(['user_id']);
 
-      allow delete: if isAdmin();
+      allow delete: if isActiveAdmin()
+        && hasAdminPermission('farmers.manage');
     }
 
     match /farmers_market/{marketId} {
       allow read: if signedIn();
-      allow write: if isAdmin();
+      allow write: if isActiveAdmin()
+        && hasAdminPermission('markets.manage');
     }
 
     match /categories/{categoryId} {
       allow read: if signedIn();
-      allow write: if isAdmin();
+      allow write: if isActiveAdmin()
+        && hasAdminPermission('categories.manage');
     }
 
     match /products/{productId} {
@@ -105,21 +189,20 @@ service cloud.firestore {
         && resource.data.farmer_id == request.auth.uid
         && !changedKeys().hasAny(['farmer_id']);
 
-      allow update: if isAdmin();
-
       allow delete: if isFarmer()
         && resource.data.farmer_id == request.auth.uid;
 
-      allow delete: if isAdmin();
+      allow create, update, delete: if isActiveAdmin()
+        && hasAdminPermission('products.manage');
     }
 
     match /orders/{orderId} {
       allow read: if signedIn()
-        && (
-          resource.data.customer_id == request.auth.uid ||
-          resource.data.farmer_id == request.auth.uid ||
-          isAdmin()
-        );
+        && (resource.data.customer_id == request.auth.uid
+          || resource.data.farmer_id == request.auth.uid);
+      allow read: if isActiveAdmin()
+        && (hasAdminPermission('orders.manage')
+          || hasAdminPermission('reports.view'));
 
       allow create: if isCustomer()
         && request.resource.data.customer_id == request.auth.uid
@@ -129,27 +212,24 @@ service cloud.firestore {
         && resource.data.customer_id == request.auth.uid
         && resource.data.status in ['Pending', 'Confirmed']
         && changedKeys().hasOnly(['pickup_slot_time', 'status'])
-        && (
-          !changedKeys().hasAny(['status']) ||
-          request.resource.data.status == 'Cancelled'
-        );
+        && (!changedKeys().hasAny(['status'])
+          || request.resource.data.status == 'Cancelled');
 
       allow update: if isFarmer()
         && resource.data.farmer_id == request.auth.uid
         && changedKeys().hasOnly(['status'])
         && validOrderStatus(request.resource.data.status);
 
-      allow update: if isAdmin()
+      allow update: if isActiveAdmin()
+        && hasAdminPermission('orders.manage')
         && changedKeys().hasOnly(['status'])
         && validOrderStatus(request.resource.data.status);
     }
 
     match /notifications/{notificationId} {
       allow read: if signedIn()
-        && (
-          resource.data.get('farmer_id', null) == request.auth.uid ||
-          resource.data.get('customer_id', null) == request.auth.uid
-        );
+        && (resource.data.get('farmer_id', null) == request.auth.uid
+          || resource.data.get('customer_id', null) == request.auth.uid);
 
       allow create: if isFarmer()
         && request.resource.data.get('farmer_id', null) == request.auth.uid;
@@ -160,10 +240,8 @@ service cloud.firestore {
         && !('farmer_id' in request.resource.data);
 
       allow update: if signedIn()
-        && (
-          resource.data.get('farmer_id', null) == request.auth.uid ||
-          resource.data.get('customer_id', null) == request.auth.uid
-        )
+        && (resource.data.get('farmer_id', null) == request.auth.uid
+          || resource.data.get('customer_id', null) == request.auth.uid)
         && changedKeys().hasOnly(['is_read']);
     }
 
@@ -172,30 +250,27 @@ service cloud.firestore {
         && request.resource.data.user_id == request.auth.uid;
 
       allow read: if signedIn()
-        && (resource.data.user_id == request.auth.uid || isAdmin());
+        && resource.data.user_id == request.auth.uid;
+      allow read: if isActiveAdmin()
+        && hasAdminPermission('content.manage');
 
-      allow update: if isAdmin()
+      allow update: if isActiveAdmin()
+        && hasAdminPermission('content.manage')
         && changedKeys().hasOnly(['status', 'reviewed_at', 'reviewed_by']);
-
-      allow delete: if isAdmin();
+      allow delete: if false;
     }
 
     match /settings/{settingId} {
-      allow read: if signedIn();
-      allow write: if isAdmin();
+      allow get, list: if isSuperAdmin();
+      allow create, update: if isSuperAdmin();
+      allow delete: if false;
     }
 
     match /app_content/{pageId} {
       allow read: if signedIn();
-      allow write: if isAdmin();
-    }
-
-    match /audit_logs/{logId} {
-      allow read: if isAdmin();
-      allow create: if signedIn()
-        && request.resource.data.admin_id == request.auth.uid;
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update: if isActiveAdmin()
+        && hasAdminPermission('content.manage');
+      allow delete: if false;
     }
 
     match /wishlists/{userId}/items/{productId} {

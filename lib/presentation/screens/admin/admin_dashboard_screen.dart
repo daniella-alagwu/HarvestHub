@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import '../../../data/models/admin_profile.dart';
@@ -96,13 +97,16 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
   @override
   void initState() {
     super.initState();
-    if (!_can(AdminPermissions.customers)) _peopleType = 'Farmers';
-    if (!_can(AdminPermissions.products)) _catalogType = 'Categories';
+    if (!_can(AdminPermissions.customers)) {
+      _peopleType = 'farmers';
+    }
+    if (!_can(AdminPermissions.products)) _catalogType = 'categories';
+    if (!_can(AdminPermissions.categories)) _catalogType = 'products';
     if (!_can(AdminPermissions.orders)) {
       _operationsType = _can(AdminPermissions.markets) ? 'markets' : 'reports';
     }
     _reportStream = _can(AdminPermissions.reports)
-        ? widget.repository.watchDashboardReport().asBroadcastStream()
+        ? widget.repository.watchDashboardReport()
         : const Stream<Map<String, dynamic>>.empty();
   }
 
@@ -265,67 +269,79 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
   Widget _buildSection(bool wide) => SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(wide ? 28 : 16, 12, wide ? 28 : 16, 28),
         child: !_sections.any((item) => item.$1 == _section)
-            ? _overviewPage(wide)
+            ? _overviewPage()
             : switch (_section) {
                 'people' => _peoplePage(),
                 'catalog' => _catalogPage(),
                 'operations' => _operationsPage(),
                 'content' => _contentPage(),
                 'control' => _controlPage(),
-                _ => _overviewPage(wide),
+                _ => _overviewPage(),
               },
       );
 
-  Widget _overviewPage(bool wide) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (_can(AdminPermissions.reports)) _reportCards(wide),
-        const SizedBox(height: 20),
-        _heading('Marketplace activity', 'Live Firestore data'),
+  Widget _overviewPage() {
+    final canSeeAccounts = _can(AdminPermissions.customers) ||
+        _can(AdminPermissions.farmers);
+    final canSeeReports = _can(AdminPermissions.reports);
+
+    if (!canSeeAccounts && !canSeeReports) {
+      return _empty('Your Admin account has no overview permissions.');
+    }
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (canSeeReports) _reportCards(),
+      if (canSeeAccounts) ...[
+        if (canSeeReports) const SizedBox(height: 20),
+        _heading('Marketplace activity', 'Live Firebase data'),
         Card(
             child: Column(children: [
           if (_can(AdminPermissions.customers))
             _summaryStream(
-                'Customer accounts', 'customer', Icons.person_outline),
+                'Registered customers', 'customer', Icons.person_outline),
           if (_can(AdminPermissions.farmers))
             _summaryStream(
-                'Farmer accounts', 'farmer', Icons.agriculture_outlined),
+                'Registered farmers', 'farmer', Icons.agriculture_outlined),
         ])),
-        if (_can(AdminPermissions.reports)) ...[
-          const SizedBox(height: 20),
-          _heading('Revenue by market', 'SRS report'),
-          _revenueByMarket(),
-          const SizedBox(height: 20),
-          _heading('Most active farmers', null),
-          _activeFarmersReport(),
-        ],
-      ]);
+      ],
+      if (canSeeReports) ...[
+        const SizedBox(height: 20),
+        _heading('Revenue by market', 'SRS report'),
+        _revenueByMarket(),
+        const SizedBox(height: 20),
+        _heading('Most active farmers', null),
+        _activeFarmersReport(),
+      ],
+    ]);
+  }
 
-  Widget _reportCards(bool wide) => StreamBuilder<Map<String, dynamic>>(
+  Widget _reportCards() => StreamBuilder<Map<String, dynamic>>(
         stream: _reportStream,
         builder: (context, snapshot) {
           final report = snapshot.data ?? const <String, dynamic>{};
+          final hasReport = snapshot.hasData;
           final metrics = [
             (
               'Total orders',
-              '${report['total_orders'] ?? '—'}',
+              hasReport ? '${report['total_orders'] ?? 0}' : '—',
               Icons.receipt_long_outlined,
               AppColors.mainGreen
             ),
             (
               'Revenue',
-              _money(report['revenue']),
+              hasReport ? _money(report['revenue']) : '—',
               Icons.payments_outlined,
               AppColors.autumnRust
             ),
             (
               'Farmer profiles',
-              '${report['active_farmers'] ?? '—'}',
+              hasReport ? '${report['active_farmers'] ?? 0}' : '—',
               Icons.agriculture_outlined,
               AppColors.deepGreen
             ),
             (
               'Products',
-              '${report['products'] ?? '—'}',
+              hasReport ? '${report['products'] ?? 0}' : '—',
               Icons.eco_outlined,
               AppColors.wheatGold
             ),
@@ -338,18 +354,25 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
                       'Could not load platform report: ${snapshot.error}'),
                 if (snapshot.connectionState == ConnectionState.waiting)
                   const LinearProgressIndicator(color: AppColors.mainGreen),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: wide ? 4 : 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: wide ? 1.8 : 1.48,
-                  children: [
-                    for (final metric in metrics)
-                      _metric(metric.$1, metric.$2, metric.$3, metric.$4)
-                  ],
-                ),
+                LayoutBuilder(builder: (context, constraints) {
+                  final columns = constraints.maxWidth >= 1050
+                      ? 4
+                      : constraints.maxWidth >= 700
+                          ? 3
+                          : 2;
+                  return GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: columns,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    mainAxisExtent: 128,
+                    children: [
+                      for (final metric in metrics)
+                        _metric(metric.$1, metric.$2, metric.$3, metric.$4)
+                    ],
+                  );
+                }),
               ]);
         },
       );
@@ -363,8 +386,16 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Icon(icon, color: color, size: 20),
-                Text(value,
-                    style: AppTextStyles.headingMedium.copyWith(fontSize: 21)),
+                SizedBox(
+                  width: double.infinity,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(value,
+                        style: AppTextStyles.headingMedium
+                            .copyWith(fontSize: 21)),
+                  ),
+                ),
                 Text(label, style: AppTextStyles.bodyMuted),
               ]),
         ),
@@ -376,14 +407,32 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
         builder: (context, snapshot) => ListTile(
           leading: Icon(icon, color: AppColors.mainGreen),
           title: Text(label, style: AppTextStyles.bodyRegular),
-          trailing: Text('${snapshot.data?.length ?? '—'}',
-              style: AppTextStyles.headingMedium),
+          subtitle: snapshot.hasError
+              ? const Text('Could not load account count.')
+              : const Text('Live total from Firebase'),
+          trailing: snapshot.hasError
+              ? const Icon(Icons.error_outline, color: AppColors.error)
+              : snapshot.connectionState == ConnectionState.waiting
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text('${snapshot.data?.length ?? 0}',
+                      style: AppTextStyles.headingMedium),
         ),
       );
 
   Widget _revenueByMarket() => StreamBuilder<Map<String, dynamic>>(
         stream: _reportStream,
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return _errorBanner(
+                'Could not load revenue data: ${snapshot.error}');
+          }
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
+            return const LinearProgressIndicator(color: AppColors.mainGreen);
+          }
           final values =
               snapshot.data?['revenue_by_market'] as Map<String, double>? ??
                   const {};
@@ -403,6 +452,14 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
   Widget _activeFarmersReport() => StreamBuilder<Map<String, dynamic>>(
         stream: _reportStream,
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return _errorBanner(
+                'Could not load farmer activity: ${snapshot.error}');
+          }
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
+            return const LinearProgressIndicator(color: AppColors.mainGreen);
+          }
           final rows =
               snapshot.data?['most_active_farmers'] as List<dynamic>? ??
                   const [];
@@ -431,7 +488,7 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
         _searchField('Search ${_peopleType.toLowerCase()}',
             (value) => setState(() => _peopleQuery = value)),
         const SizedBox(height: 12),
-        if (_peopleType == 'Customers' && _can(AdminPermissions.customers))
+        if (_peopleType == 'customers' && _can(AdminPermissions.customers))
           _customers()
         else if (_can(AdminPermissions.farmers))
           _farmers(),
@@ -443,13 +500,21 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
           if (snapshot.hasError) {
             return _errorBanner('Could not load customers. ${snapshot.error}');
           }
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
+            return const LinearProgressIndicator(color: AppColors.mainGreen);
+          }
           final users = (snapshot.data ?? const [])
               .where((user) =>
-                  '${user['name']} ${user['email']} ${user['phone']}'
+                  '${user['name']} ${user['email']} ${user['phone']} ${user['address']}'
                       .toLowerCase()
                       .contains(_peopleQuery.toLowerCase()))
               .toList();
-          if (users.isEmpty) return _empty('No customers found.');
+          if (users.isEmpty) {
+            return _empty(_peopleQuery.trim().isEmpty
+                ? 'No customer accounts found.'
+                : 'No customers match your search.');
+          }
           return Card(
               child: Column(children: [
             for (final user in users) _personTile(user, farmer: false)
@@ -463,13 +528,21 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
           if (snapshot.hasError) {
             return _errorBanner('Could not load farmers. ${snapshot.error}');
           }
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
+            return const LinearProgressIndicator(color: AppColors.mainGreen);
+          }
           final farmers = (snapshot.data ?? const [])
               .where((farmer) =>
                   '${farmer['business_name']} ${farmer['name']} ${farmer['email']} ${farmer['market_location']}'
                       .toLowerCase()
                       .contains(_peopleQuery.toLowerCase()))
               .toList();
-          if (farmers.isEmpty) return _empty('No farmers found.');
+          if (farmers.isEmpty) {
+            return _empty(_peopleQuery.trim().isEmpty
+                ? 'No farmer accounts found.'
+                : 'No farmers match your search.');
+          }
           return Card(
               child: Column(children: [
             for (final farmer in farmers) _personTile(farmer, farmer: true)
@@ -514,26 +587,11 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
                           userId: person['user_id'] as String,
                           status: 'rejected');
                     } else if (farmer && action == 'toggle') {
-                      await widget.repository.updateUser(
-                        uid: person['user_id'] as String,
-                        changes: {
-                          'active_status': person['active_status'] == false
-                        },
-                        action: person['active_status'] == false
-                            ? 'farmer.enabled'
-                            : 'farmer.disabled',
-                      );
+                      await _togglePersonActive(person, farmer: true);
                     } else if (!farmer && action == 'edit') {
                       await _editCustomer(person);
                     } else if (!farmer && action == 'toggle') {
-                      await widget.repository.updateUser(
-                          uid: person['id'] as String,
-                          changes: {
-                            'active_status': person['active_status'] == false
-                          },
-                          action: person['active_status'] == false
-                              ? 'user.enabled'
-                              : 'user.disabled');
+                      await _togglePersonActive(person, farmer: false);
                     }
                   } catch (error) {
                     _showError(error);
@@ -546,7 +604,7 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
                         PopupMenuItem(
                           value: 'toggle',
                           child: Text(person['active_status'] == false
-                              ? 'Enable account'
+                              ? 'Reactivate account'
                               : 'Deactivate account'),
                         ),
                         const PopupMenuItem(
@@ -560,11 +618,49 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
                         PopupMenuItem(
                             value: 'toggle',
                             child: Text(person['active_status'] == false
-                                ? 'Enable account'
-                                : 'Disable account')),
+                                ? 'Reactivate account'
+                                : 'Deactivate account')),
                       ],
               ),
       );
+
+  Future<void> _togglePersonActive(
+    Map<String, dynamic> person, {
+    required bool farmer,
+  }) async {
+    final isActive = person['active_status'] != false;
+    final accountName = farmer
+        ? (person['business_name'] as String? ?? 'this farmer account')
+        : (person['name'] as String? ?? 'this customer account');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(isActive ? 'Deactivate account?' : 'Reactivate account?'),
+        content: Text(isActive
+            ? 'Deactivate $accountName? The account data will be retained.'
+            : 'Allow $accountName to use the app again?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(isActive ? 'Deactivate' : 'Reactivate'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final uid = farmer ? person['user_id'] as String : person['id'] as String;
+    await widget.repository.updateUser(
+      uid: uid,
+      changes: {'active_status': !isActive},
+      action: '${farmer ? 'farmer' : 'customer'}.${isActive ? 'disabled' : 'enabled'}',
+    );
+    _showMessage(isActive ? 'Account deactivated.' : 'Account reactivated.');
+  }
 
   Future<void> _editCustomer(Map<String, dynamic> customer) async {
     final name = TextEditingController(text: customer['name'] as String? ?? '');
@@ -678,6 +774,47 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
     }
   }
 
+  AlertDialog _adminFormDialog({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required Widget content,
+    required List<Widget> actions,
+  }) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    return AlertDialog(
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      titlePadding: const EdgeInsets.fromLTRB(24, 22, 24, 8),
+      contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      title: Row(children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.softGreen,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: AppColors.deepGreen, size: 21),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            title,
+            style: AppTextStyles.headingMedium.copyWith(fontSize: 20),
+          ),
+        ),
+      ]),
+      content: SizedBox(
+        width: screenWidth < 560 ? screenWidth - 88 : 472,
+        child: content,
+      ),
+      actions: actions,
+    );
+  }
+
   Future<void> _createProduct() async {
     final formKey = GlobalKey<FormState>();
     final item = TextEditingController();
@@ -698,47 +835,70 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
                       farmer['active_status'] != false)
                   .toList();
           return StatefulBuilder(
-              builder: (context, setDialogState) => AlertDialog(
-                    title: const Text('Add product'),
+              builder: (context, setDialogState) => _adminFormDialog(
+                    context: dialogContext,
+                    title: 'Add product',
+                    icon: Icons.inventory_2_outlined,
                     content: Form(
                       key: formKey,
-                      child: SingleChildScrollView(
-                          child:
-                              Column(mainAxisSize: MainAxisSize.min, children: [
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
                         TextFormField(
                             controller: item,
                             decoration: const InputDecoration(
-                                labelText: 'Product name'),
+                              labelText: 'Product name',
+                              prefixIcon: Icon(Icons.eco_outlined),
+                            ),
                             validator: _required),
                         TextFormField(
                             controller: category,
-                            decoration:
-                                const InputDecoration(labelText: 'Category'),
+                            decoration: const InputDecoration(
+                              labelText: 'Category',
+                              prefixIcon: Icon(Icons.category_outlined),
+                            ),
                             validator: _required),
                         TextFormField(
                             controller: price,
-                            decoration:
-                                const InputDecoration(labelText: 'Price'),
+                            decoration: const InputDecoration(
+                              labelText: 'Price per item',
+                              prefixIcon: Icon(Icons.payments_outlined),
+                            ),
                             keyboardType: const TextInputType.numberWithOptions(
                                 decimal: true),
-                            validator: (value) =>
-                                double.tryParse(value ?? '') == null
-                                    ? 'Enter a valid price'
-                                    : null),
+                            validator: (value) {
+                              final parsed = double.tryParse(value ?? '');
+                              return parsed == null || parsed <= 0
+                                  ? 'Enter a price greater than zero'
+                                  : null;
+                            }),
                         TextFormField(
                             controller: stock,
                             decoration: const InputDecoration(
-                                labelText: 'Stock quantity'),
+                              labelText: 'Stock quantity',
+                              prefixIcon: Icon(Icons.inventory_outlined),
+                            ),
                             keyboardType: TextInputType.number,
-                            validator: (value) =>
-                                int.tryParse(value ?? '') == null
-                                    ? 'Enter a whole number'
-                                    : null),
-                        const SizedBox(height: 8),
+                            validator: (value) {
+                              final parsed = int.tryParse(value ?? '');
+                              return parsed == null || parsed < 0
+                                  ? 'Enter zero or a positive whole number'
+                                  : null;
+                            }),
+                        const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
                           initialValue: selectedFarmer,
-                          decoration:
-                              const InputDecoration(labelText: 'Farmer'),
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: 'Farmer',
+                            prefixIcon: const Icon(Icons.agriculture_outlined),
+                            helperText: farmerSnapshot.connectionState ==
+                                    ConnectionState.waiting
+                                ? 'Loading farmers…'
+                                : farmerSnapshot.hasError
+                                    ? 'Could not load the farmer list.'
+                                    : farmers.isEmpty
+                                        ? 'No approved, active farmers are available.'
+                                        : 'Only approved, active farmers appear.',
+                          ),
                           items: [
                             for (final farmer in farmers)
                               DropdownMenuItem(
@@ -757,18 +917,24 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
                           validator: (value) =>
                               value == null ? 'Select a farmer' : null,
                         ),
-                      ])),
+                      ]),
                     ),
                     actions: [
                       TextButton(
                           onPressed: () => Navigator.pop(dialogContext, false),
                           child: const Text('Cancel')),
                       FilledButton(
-                          onPressed: farmerSnapshot.hasError || farmers.isEmpty
+                          onPressed: farmerSnapshot.hasError ||
+                                  farmerSnapshot.connectionState ==
+                                      ConnectionState.waiting ||
+                                  farmers.isEmpty
                               ? null
-                              : () => Navigator.pop(dialogContext,
-                                  formKey.currentState!.validate()),
-                          child: const Text('Add')),
+                              : () {
+                                  if (formKey.currentState!.validate()) {
+                                    Navigator.pop(dialogContext, true);
+                                  }
+                                },
+                          child: const Text('Add product')),
                     ],
                   ));
         },
@@ -796,7 +962,7 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
           if (_can(AdminPermissions.categories)) 'Categories',
         ], _catalogType, (value) => setState(() => _catalogType = value)),
         const SizedBox(height: 12),
-        if (_catalogType == 'Products' && _can(AdminPermissions.products))
+        if (_catalogType == 'products' && _can(AdminPermissions.products))
           _products()
         else if (_can(AdminPermissions.categories))
           _categoryList(),
@@ -814,7 +980,6 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
                       .toLowerCase()
                       .contains(_catalogQuery.toLowerCase()))
               .toList();
-          if (products.isEmpty) return _empty('No products found.');
           return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -829,7 +994,10 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
                       label: const Text('Add')),
                 ]),
                 const SizedBox(height: 10),
-                Card(
+                if (products.isEmpty)
+                  _empty('No products found.')
+                else
+                  Card(
                     child: Column(children: [
                   for (final product in products)
                     ListTile(
@@ -973,25 +1141,41 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
     final controller = TextEditingController(text: name);
     final formKey = GlobalKey<FormState>();
     final save = await showDialog<bool>(
-        context: context,
-        builder: (_) => AlertDialog(
-                title: Text(id == null ? 'Add category' : 'Edit category'),
-                content: Form(
-                    key: formKey,
-                    child: TextFormField(
-                        controller: controller,
-                        decoration:
-                            const InputDecoration(labelText: 'Category name'),
-                        validator: _required)),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel')),
-                  FilledButton(
-                      onPressed: () => Navigator.pop(
-                          context, formKey.currentState!.validate()),
-                      child: const Text('Save'))
-                ]));
+      context: context,
+      builder: (dialogContext) => _adminFormDialog(
+        context: dialogContext,
+        title: id == null ? 'Add category' : 'Edit category',
+        icon: Icons.category_outlined,
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Category name',
+              prefixIcon: Icon(Icons.sell_outlined),
+              hintText: 'For example, Vegetables',
+            ),
+            validator: _required,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(dialogContext, true);
+              }
+            },
+            icon: Icon(id == null ? Icons.add_rounded : Icons.save_outlined),
+            label: Text(id == null ? 'Add category' : 'Save changes'),
+          ),
+        ],
+      ),
+    );
     if (save != true) return;
     try {
       await widget.repository.saveCategory(id: id, name: controller.text);
@@ -1122,7 +1306,9 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
                                     name:
                                         market['market_name'] as String? ?? '',
                                     address:
-                                        market['address'] as String? ?? '');
+                                        market['address'] as String? ?? '',
+                                    pickupSlots:
+                                        _marketSlots(market['pickup_slots']));
                               }
                               if (action == 'delete') {
                                 await _confirmDelete(
@@ -1141,45 +1327,111 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
             ]);
       });
 
-  Future<void> _editMarket(
-      {String? id, String name = '', String address = ''}) async {
+  List<Map<String, dynamic>> _marketSlots(Object? rawSlots) {
+    if (rawSlots is! List) return const [];
+    return rawSlots.map((slot) {
+      if (slot is Map) {
+        return <String, dynamic>{
+          'label': slot['label']?.toString() ?? '',
+          'is_available': slot['is_available'] is bool
+              ? slot['is_available'] as bool
+              : slot['isAvailable'] is bool
+                  ? slot['isAvailable'] as bool
+                  : true,
+        };
+      }
+      return <String, dynamic>{'label': slot.toString(), 'is_available': true};
+    }).where((slot) => (slot['label'] as String).trim().isNotEmpty).toList();
+  }
+
+  Future<void> _editMarket({
+    String? id,
+    String name = '',
+    String address = '',
+    List<Map<String, dynamic>> pickupSlots = const [],
+  }) async {
     final nameController = TextEditingController(text: name);
     final addressController = TextEditingController(text: address);
+    final slotsController = TextEditingController(
+        text: pickupSlots.map((slot) => slot['label']).join('\n'));
     final formKey = GlobalKey<FormState>();
     final save = await showDialog<bool>(
-        context: context,
-        builder: (_) => AlertDialog(
-                title: Text(id == null ? 'Add market' : 'Edit market'),
-                content: Form(
-                    key: formKey,
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      TextFormField(
-                          controller: nameController,
-                          decoration:
-                              const InputDecoration(labelText: 'Market name'),
-                          validator: _required),
-                      TextFormField(
-                          controller: addressController,
-                          decoration:
-                              const InputDecoration(labelText: 'Address'),
-                          validator: _required)
-                    ])),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel')),
-                  FilledButton(
-                      onPressed: () => Navigator.pop(
-                          context, formKey.currentState!.validate()),
-                      child: const Text('Save'))
-                ]));
+      context: context,
+      builder: (dialogContext) => _adminFormDialog(
+        context: dialogContext,
+        title: id == null ? 'Add market' : 'Edit market',
+        icon: Icons.storefront_outlined,
+        content: Form(
+          key: formKey,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextFormField(
+              controller: nameController,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Market name',
+                prefixIcon: Icon(Icons.store_outlined),
+              ),
+              validator: _required,
+            ),
+            TextFormField(
+              controller: addressController,
+              decoration: const InputDecoration(
+                labelText: 'Address',
+                prefixIcon: Icon(Icons.location_on_outlined),
+              ),
+              validator: _required,
+            ),
+            TextFormField(
+              controller: slotsController,
+              minLines: 2,
+              maxLines: 5,
+              decoration: const InputDecoration(
+                labelText: 'Pickup slots',
+                prefixIcon: Icon(Icons.schedule_outlined),
+                helperText: 'Enter one pickup slot per line',
+                alignLabelWithHint: true,
+              ),
+              validator: _required,
+            ),
+          ]),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(dialogContext, true);
+              }
+            },
+            icon: Icon(id == null ? Icons.add_rounded : Icons.save_outlined),
+            label: Text(id == null ? 'Add market' : 'Save changes'),
+          ),
+        ],
+      ),
+    );
     if (save != true) return;
+    final oldAvailability = {
+      for (final slot in pickupSlots)
+        (slot['label'] as String).trim(): slot['is_available'] == true,
+    };
+    final updatedSlots = slotsController.text
+        .split('\n')
+        .map((label) => label.trim())
+        .where((label) => label.isNotEmpty)
+        .map((label) => <String, dynamic>{
+              'label': label,
+              'is_available': oldAvailability[label] ?? true,
+            })
+        .toList();
     try {
       await widget.repository.saveMarket(
           marketId: id,
           name: nameController.text,
           address: addressController.text,
-          pickupSlots: const [],
+          pickupSlots: updatedSlots,
           active: true);
     } catch (error) {
       _showError(error);
@@ -1187,7 +1439,7 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
   }
 
   Widget _reports() => _can(AdminPermissions.reports)
-      ? _reportCards(true)
+      ? _reportCards()
       : _empty('Reports permission is required.');
 
   Widget _contentPage() => Column(
@@ -1441,77 +1693,190 @@ class _AdminWorkspaceState extends State<_AdminWorkspace> {
     final password = TextEditingController();
     final selected = <String>{};
     final formKey = GlobalKey<FormState>();
+    String? permissionsError;
+    String? creationError;
+    var isCreating = false;
     final created = await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) => StatefulBuilder(
-            builder: (context, setDialogState) => AlertDialog(
-                  title: const Text('Create standard Admin'),
-                  content: SingleChildScrollView(
-                      child: Form(
-                          key: formKey,
-                          child:
-                              Column(mainAxisSize: MainAxisSize.min, children: [
-                            TextFormField(
-                                controller: name,
-                                decoration: const InputDecoration(
-                                    labelText: 'Full name'),
-                                validator: _required),
-                            TextFormField(
-                                controller: email,
-                                decoration:
-                                    const InputDecoration(labelText: 'Email'),
-                                keyboardType: TextInputType.emailAddress,
-                                validator: _required),
-                            TextFormField(
-                                controller: password,
-                                decoration: const InputDecoration(
-                                    labelText: 'Temporary password'),
-                                obscureText: true,
-                                validator: (value) =>
-                                    (value == null || value.length < 8)
-                                        ? 'Use at least 8 characters'
-                                        : null),
-                            const SizedBox(height: 12),
-                            for (final permission
-                                in AdminPermissions.allStandard)
-                              CheckboxListTile(
-                                  value: selected.contains(permission),
-                                  title: Text(permission),
-                                  dense: true,
-                                  contentPadding: EdgeInsets.zero,
-                                  onChanged: (value) => setDialogState(() {
-                                        if (value == true) {
-                                          selected.add(permission);
-                                        } else {
-                                          selected.remove(permission);
-                                        }
-                                      })),
-                          ]))),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(dialogContext, false),
-                        child: const Text('Cancel')),
-                    FilledButton(
-                        onPressed: () => Navigator.pop(
-                            dialogContext,
-                            formKey.currentState!.validate() &&
-                                selected.isNotEmpty),
-                        child: const Text('Create'))
-                  ],
-                )));
-    if (created != true) return;
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          Future<void> submit() async {
+            if (isCreating) return;
+            final valid = formKey.currentState!.validate();
+            if (selected.isEmpty) {
+              setDialogState(() {
+                permissionsError = 'Select at least one permission.';
+              });
+              return;
+            }
+            if (!valid) return;
+
+            setDialogState(() {
+              isCreating = true;
+              creationError = null;
+            });
+            try {
+              await widget.repository.createAdminAccount(
+                name: name.text,
+                email: email.text.trim(),
+                password: password.text,
+                permissions: Set<String>.of(selected),
+                superAdmin: false,
+              );
+              if (!mounted) return;
+              Navigator.pop(dialogContext, true);
+            } catch (error) {
+              if (!mounted) return;
+              setDialogState(() {
+                isCreating = false;
+                creationError = _adminCreationError(error);
+              });
+            }
+          }
+
+          return PopScope(
+            canPop: !isCreating,
+            child: _adminFormDialog(
+              context: dialogContext,
+              title: 'Create standard Admin',
+              icon: Icons.admin_panel_settings_outlined,
+              content: Form(
+              key: formKey,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                if (creationError != null) ...[
+                  _errorBanner(creationError!),
+                  const SizedBox(height: 8),
+                ],
+                TextFormField(
+                  controller: name,
+                  decoration: const InputDecoration(
+                    labelText: 'Full name',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  validator: _required,
+                  textInputAction: TextInputAction.next,
+                ),
+                TextFormField(
+                  controller: email,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: _required,
+                  textInputAction: TextInputAction.next,
+                ),
+                TextFormField(
+                  controller: password,
+                  decoration: const InputDecoration(
+                    labelText: 'Temporary password',
+                    prefixIcon: Icon(Icons.lock_outline),
+                  ),
+                  obscureText: true,
+                  validator: (value) =>
+                      (value == null || value.length < 8)
+                          ? 'Use at least 8 characters'
+                          : null,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => submit(),
+                ),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Permissions',
+                    style: AppTextStyles.bodyRegular
+                        .copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                if (permissionsError != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        permissionsError!,
+                        style: const TextStyle(color: AppColors.error),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 4),
+                for (final permission in AdminPermissions.allStandard)
+                  CheckboxListTile(
+                    value: selected.contains(permission),
+                    title: Text(permission),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (value) => setDialogState(() {
+                      if (value == true) {
+                        selected.add(permission);
+                      } else {
+                        selected.remove(permission);
+                      }
+                      if (selected.isNotEmpty) permissionsError = null;
+                    }),
+                  ),
+              ]),
+            ),
+              actions: [
+              TextButton(
+                onPressed: isCreating
+                    ? null
+                    : () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton.icon(
+                onPressed: isCreating ? null : submit,
+                icon: isCreating
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.person_add_alt_1),
+                label: Text(isCreating ? 'Creating...' : 'Create Admin'),
+              ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    if (created != true) {
+      name.dispose();
+      email.dispose();
+      password.dispose();
+      return;
+    }
     try {
-      await widget.repository.createAdminAccount(
-          name: name.text,
-          email: email.text,
-          password: password.text,
-          permissions: selected,
-          superAdmin: false);
       _showMessage(
           'Admin account created. Give the temporary password to the new Admin securely.');
     } catch (error) {
       _showError(error);
+    } finally {
+      name.dispose();
+      email.dispose();
+      password.dispose();
     }
+  }
+
+  String _adminCreationError(Object error) {
+    if (error is FirebaseException) {
+      return switch (error.code) {
+        'permission-denied' =>
+          'Firebase denied the Admin profile write. Confirm that the current Firestore rules are deployed and that your account is an active Super Admin.',
+        'email-already-in-use' =>
+          'An account already uses this email address.',
+        'invalid-email' => 'Enter a valid email address.',
+        'weak-password' => 'Choose a stronger temporary password.',
+        'network-request-failed' =>
+          'Could not reach Firebase. Check the internet connection and try again.',
+        'operation-not-allowed' =>
+          'Email and password sign-in is not enabled for this Firebase project.',
+        _ => error.message ?? 'Could not create the Admin account.',
+      };
+    }
+    return 'Could not create the Admin account: $error';
   }
 
   Future<void> _setAdminActive(Map<String, dynamic> admin, bool active) async {
