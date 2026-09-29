@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../../application/products/product_provider.dart';
 import '../../../../application/wishlist/wishlist_provider.dart';
@@ -48,6 +52,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
       _userRepository.watchCurrentUserProfile();
 
   Market? _selectedMarket;
+  String? _selectedLocation;
   bool _loadingLocation = true;
 
   @override
@@ -87,6 +92,9 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
 
       setState(() {
         _selectedMarket = market;
+        _selectedLocation = market.address.isNotEmpty
+            ? market.address
+            : market.marketName;
         _loadingLocation = false;
       });
     } catch (e) {
@@ -103,161 +111,21 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
   // ------------------------------------------------------------
 
   Future<void> _chooseLocation() async {
-    try {
-      final markets = await _marketRepository.fetchAll();
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _LocationSearchSheet(
+        initialLocation: _selectedLocation,
+      ),
+    );
 
-      if (!mounted) return;
+    if (!mounted || selected == null || selected.trim().isEmpty) return;
 
-      final selected = await showModalBottomSheet<Market>(
-        context: context,
-        backgroundColor: Colors.white,
-        isScrollControlled: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(24),
-          ),
-        ),
-        builder: (context) {
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                20,
-                12,
-                20,
-                24,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Drag handle
-                  Center(
-                    child: Container(
-                      width: 42,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Text(
-                    'Choose your location',
-                    style: AppTextStyles.headingLarge.copyWith(
-                      fontSize: 20,
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  Text(
-                    'Select a pickup location near you.',
-                    style: AppTextStyles.bodyMuted,
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  if (markets.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 24,
-                      ),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.location_off_outlined,
-                              size: 42,
-                              color: Colors.grey.shade400,
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'No locations available',
-                              style: AppTextStyles.bodyMuted,
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    ...markets.map(
-                      (market) {
-                        final isSelected =
-                            _selectedMarket?.id == market.id;
-
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-
-                          leading: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: AppColors.softGreen,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.location_on_outlined,
-                              color: AppColors.mainGreen,
-                            ),
-                          ),
-
-                          title: Text(
-                            market.marketName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-
-                          subtitle: Text(
-                            market.address,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-
-                          trailing: isSelected
-                              ? const Icon(
-                                  Icons.check_circle,
-                                  color: AppColors.mainGreen,
-                                )
-                              : const Icon(
-                                  Icons.chevron_right,
-                                ),
-
-                          onTap: () {
-                            Navigator.pop(
-                              context,
-                              market,
-                            );
-                          },
-                        );
-                      },
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-
-      if (selected == null || !mounted) return;
-
-      setState(() {
-        _selectedMarket = selected;
-      });
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Unable to load locations right now.',
-          ),
-        ),
-      );
-    }
+    setState(() => _selectedLocation = selected);
   }
 
   // ------------------------------------------------------------
@@ -281,8 +149,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
           Flexible(
             child: Text(
               _loadingLocation
-                  ? 'Selecting location...'
-                  : 'Pickup near • ${_selectedMarket?.marketName ?? 'Select location'}',
+                  ? 'Finding your location...'
+                  : 'Location • ${_selectedLocation ?? _selectedMarket?.marketName ?? 'Select location'}',
               style: AppTextStyles.caption.copyWith(
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
@@ -537,8 +405,8 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
               // FRESH TODAY
               // --------------------------------------------------
 
-              const SectionHeader(
-                title: 'Fresh today',
+              SectionHeader(
+                title: products.selectedCategory ?? 'Fresh today',
               ),
 
               const SizedBox(height: 12),
@@ -589,5 +457,238 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
         ),
       ),
     );
+  }
+}
+
+
+class _LocationSearchSheet extends StatefulWidget {
+  const _LocationSearchSheet({this.initialLocation});
+
+  final String? initialLocation;
+
+  @override
+  State<_LocationSearchSheet> createState() => _LocationSearchSheetState();
+}
+
+class _LocationSearchSheetState extends State<_LocationSearchSheet> {
+  final _controller = TextEditingController();
+  Timer? _debounce;
+  List<_LocationResult> _results = [];
+  bool _isSearching = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.text = widget.initialLocation ?? '';
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    final query = value.trim();
+    if (query.length < 2) {
+      setState(() {
+        _results = [];
+        _isSearching = false;
+        _error = null;
+      });
+      return;
+    }
+    _debounce = Timer(
+      const Duration(milliseconds: 450),
+      () => _search(query),
+    );
+  }
+
+  Future<void> _search(String query) async {
+    setState(() {
+      _isSearching = true;
+      _error = null;
+    });
+
+    try {
+      final uri = Uri.https(
+        'nominatim.openstreetmap.org',
+        '/search',
+        {
+          'format': 'jsonv2',
+          'addressdetails': '1',
+          'limit': '8',
+          'countrycodes': 'ng',
+          'q': query,
+        },
+      );
+      final response = await http.get(
+        uri,
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'HarvestHub/1.0',
+        },
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Location search failed');
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) throw Exception('Invalid location response');
+
+      final results = decoded
+          .whereType<Map>()
+          .map((item) => _LocationResult(
+                displayName: item['display_name']?.toString() ?? '',
+                latitude: item['lat']?.toString() ?? '',
+                longitude: item['lon']?.toString() ?? '',
+              ))
+          .where((item) => item.displayName.isNotEmpty)
+          .toList();
+
+      if (!mounted) return;
+      setState(() {
+        _results = results;
+        _isSearching = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isSearching = false;
+        _error = 'Could not search locations. Check your internet connection.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.78,
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Choose your location',
+                    style: AppTextStyles.headingLarge.copyWith(fontSize: 20),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                child: TextField(
+                  controller: _controller,
+                  autofocus: true,
+                  onChanged: _onSearchChanged,
+                  decoration: InputDecoration(
+                    hintText: 'Search a city, area or address',
+                    prefixIcon: const Icon(Icons.search, color: AppColors.mainGreen),
+                    suffixIcon: _controller.text.isEmpty
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _controller.clear();
+                              _onSearchChanged('');
+                              setState(() {});
+                            },
+                          ),
+                    filled: true,
+                    fillColor: AppColors.background,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+              if (_isSearching)
+                const Padding(
+                  padding: EdgeInsets.all(18),
+                  child: CircularProgressIndicator(color: AppColors.mainGreen),
+                )
+              else if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(_error!, textAlign: TextAlign.center),
+                )
+              else if (_results.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    'Search for a real Nigerian city, area or address.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodyMuted,
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    itemCount: _results.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final result = _results[index];
+                      return ListTile(
+                        leading: const CircleAvatar(
+                          backgroundColor: AppColors.softGreen,
+                          child: Icon(Icons.location_on_outlined, color: AppColors.mainGreen),
+                        ),
+                        title: Text(
+                          result.shortName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.bodyRegular.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          result.displayName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () => Navigator.of(context).pop(result.displayName),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LocationResult {
+  const _LocationResult({
+    required this.displayName,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  final String displayName;
+  final String latitude;
+  final String longitude;
+
+  String get shortName {
+    final parts = displayName.split(',').map((part) => part.trim()).toList();
+    return parts.isEmpty ? displayName : parts.first;
   }
 }
