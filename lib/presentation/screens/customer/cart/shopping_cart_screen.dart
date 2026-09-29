@@ -7,6 +7,7 @@ import '../../../../application/orders/order_provider.dart';
 import '../../../../data/models/cart_item_model.dart';
 import '../../../../data/models/market_model.dart';
 import '../../../../data/repositories/market_repository.dart';
+import '../checkout/checkout_screen.dart';
 
 import '../../../theme/colors/app_colors.dart';
 import '../../../theme/text_styles.dart';
@@ -345,8 +346,10 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
                         label: 'Confirm order • '
                             '₦${cart.total.toStringAsFixed(2)}',
                         onPressed: cart.canCheckout
-                            ? () => _confirmOrder(
-                                  cart,
+                            ? () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const CheckoutScreen(),
+                                  ),
                                 )
                             : null,
                         backgroundColor: cart.canCheckout

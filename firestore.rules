@@ -123,7 +123,25 @@ service cloud.firestore {
 
       allow create: if isCustomer()
         && request.resource.data.customer_id == request.auth.uid
-        && request.resource.data.status == 'Pending';
+        && request.resource.data.farmer_id is string
+        && request.resource.data.items_json is map
+        && request.resource.data.total_price is number
+        && request.resource.data.total_price >= 0
+        && request.resource.data.market_name is string
+        && request.resource.data.status == 'Pending'
+        && request.resource.data.payment_method == 'demo_card'
+        && request.resource.data.payment_status == 'demo_only'
+        && request.resource.data.created_at == request.time
+        && request.resource.data.keys().hasAll([
+          'customer_id', 'farmer_id', 'items_json', 'pickup_slot_time',
+          'status', 'total_price', 'market_name', 'payment_method',
+          'payment_status', 'created_at'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'customer_id', 'farmer_id', 'items_json', 'pickup_slot_time',
+          'status', 'total_price', 'market_name', 'payment_method',
+          'payment_status', 'created_at'
+        ]);
 
       allow update: if isCustomer()
         && resource.data.customer_id == request.auth.uid

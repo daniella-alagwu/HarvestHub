@@ -129,105 +129,38 @@ class OrderRepository {
     );
   }
 
-  // Create one order for a single farmer
-  Future<String> placeOrder({
+  // Create all farmer sub-orders together so a multi-farmer cart is atomic.
+  Future<List<String>> placeOrders({
     required String customerId,
-    required String farmerId,
-    required Map<String, dynamic> itemsJson,
-    required double total,
+    required List<Map<String, dynamic>> orders,
     DateTime? pickupSlotTime,
     required String marketName,
   }) async {
-    final batch =
-        _firestore.batch();
-
-    for (final entry
-        in itemsJson.entries) {
-      final productRef = _firestore
-          .collection('products')
-          .doc(entry.key);
-
-      final productDoc =
-          await productRef.get();
-
-      if (!productDoc.exists) {
-        throw StateError(
-          'Product ${entry.key} no longer exists.',
-        );
-      }
-
-      final data = productDoc.data() ??
-          const <String, dynamic>{};
-
-      final stock =
-          (data['stock_qty'] as num?)
-                  ?.toInt() ??
-              (data['stockQty'] as num?)
-                  ?.toInt() ??
-              (data['quantity'] as num?)
-                  ?.toInt() ??
-              0;
-
-      final quantity =
-          _quantityFrom(entry.value);
-
-      final productFarmerId =
-          data['farmer_id']?.toString() ??
-              data['farmerId']?.toString() ??
-              '';
-
-      if (productFarmerId != farmerId) {
-        throw StateError(
-          'A cart item belongs to another farmer.',
-        );
-      }
-
-      if (quantity <= 0 ||
-          quantity > stock) {
-        final name =
-            data['item_name']?.toString() ??
-                data['itemName']?.toString() ??
-                entry.key;
-
-        throw StateError(
-          '$name has insufficient stock.',
-        );
-      }
-
-      batch.update(
-        productRef,
-        {
-          'stock_qty': stock - quantity,
-        },
-      );
+    if (orders.isEmpty) {
+      throw ArgumentError('An order must contain at least one farmer group.');
     }
-
-    final orderRef =
-        _orders.doc();
-
-    batch.set(
-      orderRef,
-      {
+    final batch = _firestore.batch();
+    final orderRefs = <DocumentReference<Map<String, dynamic>>>[];
+    for (final order in orders) {
+      final ref = _orders.doc();
+      orderRefs.add(ref);
+      batch.set(ref, {
         'customer_id': customerId,
-        'farmer_id': farmerId,
-        'items_json': itemsJson,
-        'pickup_slot_time':
-            pickupSlotTime == null
-                ? null
-                : Timestamp.fromDate(
-                    pickupSlotTime,
-                  ),
+        'farmer_id': order['farmer_id'],
+        'items_json': order['items_json'],
+        'pickup_slot_time': pickupSlotTime == null
+            ? null
+            : Timestamp.fromDate(pickupSlotTime),
         'status': 'Pending',
-        'total_price': total,
+        'total_price': order['total_price'],
         'market_name': marketName,
-        'created_at':
-            FieldValue.serverTimestamp(),
-      },
-    );
-
+        'payment_method': 'demo_card',
+        'payment_status': 'demo_only',
+        'created_at': FieldValue.serverTimestamp(),
+      });
+    }
     await batch.commit();
-
-    return orderRef.id;
+    return orderRefs.map((ref) => ref.id).toList();
   }
 
   Future<void> updatePickupSlot(
@@ -247,25 +180,6 @@ class OrderRepository {
     await _orders.doc(orderId).update({
       'status': status,
     });
-  }
-
-  static int _quantityFrom(
-    Object? value,
-  ) {
-    if (value is num) {
-      return value.ceil();
-    }
-
-    if (value is Map) {
-      final quantity =
-          value['quantity'];
-
-      if (quantity is num) {
-        return quantity.ceil();
-      }
-    }
-
-    return 0;
   }
 
   static List<order_model.Order>
