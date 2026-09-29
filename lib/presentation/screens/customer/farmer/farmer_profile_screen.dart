@@ -91,12 +91,18 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
                   children: [
                     Text(farmer.businessName,
                         style: AppTextStyles.headingMedium),
-                    Text(
-                      '${farmer.rating} ★ • ${farmer.followersCount} followers',
-                      style: AppTextStyles.bodyMuted,
+                                        FutureBuilder<int>(
+                      future: context.read<WishlistProvider>().followersCountFor(farmer.id),
+                      builder: (context, snapshot) {
+                        final count = snapshot.data ?? 0;
+                        return Text(
+                          '${farmer.rating} ★ • $count followers',
+                          style: AppTextStyles.bodyMuted,
+                        );
+                      },
                     ),
                     Text(
-                      '${farmer.distanceLabel} • ${farmer.marketDay}',
+                      farmer.marketDay,
                       style: AppTextStyles.caption,
                     ),
                   ],

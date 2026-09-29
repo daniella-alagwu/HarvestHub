@@ -3,11 +3,16 @@ import '../../data/models/farmer_model.dart';
 import '../theme/colors/app_colors.dart';
 import '../theme/text_styles.dart';
 
-
 class NearbyFarmerCard extends StatelessWidget {
-  const NearbyFarmerCard({super.key, required this.farmer, this.onTap});
+  const NearbyFarmerCard({
+    super.key,
+    required this.farmer,
+    required this.productCount,
+    this.onTap,
+  });
 
   final Farmer farmer;
+  final int productCount;
   final VoidCallback? onTap;
 
   @override
@@ -44,16 +49,12 @@ class NearbyFarmerCard extends StatelessWidget {
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                                    Text(
-                    '${farmer.distanceLabel} • ${farmer.marketDay}',
-                    style: AppTextStyles.caption.copyWith(color: Colors.white70),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 2),
                   Text(
-                    '${farmer.tagline} • ${farmer.productsCount} products',
+                    '$productCount ${productCount == 1 ? 'product' : 'products'}',
                     style: AppTextStyles.caption.copyWith(color: Colors.white70),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
