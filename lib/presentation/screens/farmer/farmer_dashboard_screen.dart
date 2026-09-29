@@ -135,7 +135,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                 ? 10
                 : 99;
 
-    final key = '${products.map((p) => '${p.productId}:${bucket(p.stockQty)}').join(',')}'
+    final key =
+        '${products.map((p) => '${p.productId}:${bucket(p.stockQty)}').join(',')}'
         '|${pending.map((o) => o.orderId).join(',')}';
     if (key == _lastSyncKey) return;
     _lastSyncKey = key;
@@ -182,63 +183,64 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
         statusBarColor: Colors.transparent,
       ),
       child: Scaffold(
-      backgroundColor: AppColors.background,
-      body: StreamBuilder<FarmerAccount>(
-        stream: _accountStream,
-        builder: (context, accountSnap) {
-          final account = accountSnap.data;
-          return StreamBuilder<List<ProductModel>>(
-            stream: _productsStream,
-            builder: (context, productSnap) {
-              final products = productSnap.data ?? const <ProductModel>[];
-              return StreamBuilder<List<OrderModel>>(
-                stream: _ordersStream,
-                builder: (context, orderSnap) {
-                  final orders = [...(orderSnap.data ?? const <OrderModel>[])]
-                    ..sort((a, b) {
-                      final ad = a.createdAt;
-                      final bd = b.createdAt;
-                      if (ad == null && bd == null) return 0;
-                      if (ad == null) return 1;
-                      if (bd == null) return -1;
-                      return bd.compareTo(ad);
-                    });
+        backgroundColor: AppColors.background,
+        body: StreamBuilder<FarmerAccount>(
+          stream: _accountStream,
+          builder: (context, accountSnap) {
+            final account = accountSnap.data;
+            return StreamBuilder<List<ProductModel>>(
+              stream: _productsStream,
+              builder: (context, productSnap) {
+                final products = productSnap.data ?? const <ProductModel>[];
+                return StreamBuilder<List<OrderModel>>(
+                  stream: _ordersStream,
+                  builder: (context, orderSnap) {
+                    final orders = [...(orderSnap.data ?? const <OrderModel>[])]
+                      ..sort((a, b) {
+                        final ad = a.createdAt;
+                        final bd = b.createdAt;
+                        if (ad == null && bd == null) return 0;
+                        if (ad == null) return 1;
+                        if (bd == null) return -1;
+                        return bd.compareTo(ad);
+                      });
 
-                  final pending = orders
-                      .where((o) => o.status.trim().toLowerCase() == 'pending')
-                      .toList();
+                    final pending = orders
+                        .where(
+                            (o) => o.status.trim().toLowerCase() == 'pending')
+                        .toList();
 
-                  if (productSnap.hasData && orderSnap.hasData) {
-                    _maybeSyncNotifications(products, pending);
-                  }
+                    if (productSnap.hasData && orderSnap.hasData) {
+                      _maybeSyncNotifications(products, pending);
+                    }
 
-                  return StreamBuilder<List<NotificationModel>>(
-                    stream: _notificationsStream,
-                    builder: (context, notifSnap) {
-                      final unread =
-                          (notifSnap.data ?? const <NotificationModel>[])
-                              .where((n) => !n.isRead)
-                              .length;
+                    return StreamBuilder<List<NotificationModel>>(
+                      stream: _notificationsStream,
+                      builder: (context, notifSnap) {
+                        final unread =
+                            (notifSnap.data ?? const <NotificationModel>[])
+                                .where((n) => !n.isRead)
+                                .length;
 
-                      final loading =
-                          !productSnap.hasData || !orderSnap.hasData;
+                        final loading =
+                            !productSnap.hasData || !orderSnap.hasData;
 
-                      return _buildContent(
-                        account: account,
-                        products: products,
-                        orders: orders,
-                        pending: pending,
-                        unread: unread,
-                        loading: loading,
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          );
-        },
-      ),
+                        return _buildContent(
+                          account: account,
+                          products: products,
+                          orders: orders,
+                          pending: pending,
+                          unread: unread,
+                          loading: loading,
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -453,8 +455,8 @@ class _HeroHeader extends StatelessWidget {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: AppTextStyles.bodyMuted.copyWith(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.9),
+                                        color:
+                                            Colors.white.withValues(alpha: 0.9),
                                         fontSize: 12.5,
                                       ),
                                     ),
@@ -647,35 +649,43 @@ class _HeroChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: highlight
-            ? AppColors.wheatGold.withValues(alpha: 0.28)
-            : Colors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 88),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
           color: highlight
-              ? AppColors.wheatGold.withValues(alpha: 0.6)
-              : Colors.white.withValues(alpha: 0.16),
+              ? AppColors.wheatGold.withValues(alpha: 0.28)
+              : Colors.white.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: highlight
+                ? AppColors.wheatGold.withValues(alpha: 0.6)
+                : Colors.white.withValues(alpha: 0.16),
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.9)),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTextStyles.headingMedium
-                .copyWith(color: Colors.white, fontSize: 20),
-          ),
-          Text(
-            label,
-            style: AppTextStyles.caption
-                .copyWith(color: Colors.white.withValues(alpha: 0.85)),
-          ),
-        ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.9)),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.headingMedium
+                  .copyWith(color: Colors.white, fontSize: 20),
+            ),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.caption
+                  .copyWith(color: Colors.white.withValues(alpha: 0.85)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -750,37 +760,49 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Column(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: color.withValues(alpha: 0.25)),
-              ),
-              child: Icon(icon, color: color, size: 26),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final iconSize = constraints.maxWidth < 80 ? 20.0 : 26.0;
+        final boxSize = constraints.maxWidth < 80 ? 42.0 : 56.0;
+
+        return InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: boxSize,
+                  height: boxSize,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: color.withValues(alpha: 0.25)),
+                  ),
+                  child: Icon(icon, color: color, size: iconSize),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -928,9 +950,8 @@ class _AttentionCard extends StatelessWidget {
             Text(
               actionLabel,
               style: AppTextStyles.bodyRegular.copyWith(
-                color: color == AppColors.wheatGold
-                    ? AppColors.earthySoil
-                    : color,
+                color:
+                    color == AppColors.wheatGold ? AppColors.earthySoil : color,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -1029,8 +1050,9 @@ class _WeeklySalesCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(7, (i) {
                 final isToday = i == 6;
-                final fraction =
-                    maxTotal == 0 ? 0.0 : (totals[i] / maxTotal).clamp(0.0, 1.0);
+                final fraction = maxTotal == 0
+                    ? 0.0
+                    : (totals[i] / maxTotal).clamp(0.0, 1.0);
                 return Expanded(
                   child: _Bar(
                     fraction: fraction,
@@ -1065,6 +1087,7 @@ class _Bar extends StatelessWidget {
   Widget build(BuildContext context) {
     const maxBar = 100.0;
     final target = hasValue ? (10 + fraction * (maxBar - 10)) : 6.0;
+    final barWidth = MediaQuery.sizeOf(context).width < 360 ? 18.0 : 22.0;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -1074,7 +1097,7 @@ class _Bar extends StatelessWidget {
           duration: const Duration(milliseconds: 700),
           curve: Curves.easeOutCubic,
           builder: (context, h, _) => Container(
-            width: 22,
+            width: barWidth,
             height: h,
             decoration: BoxDecoration(
               color: !hasValue
