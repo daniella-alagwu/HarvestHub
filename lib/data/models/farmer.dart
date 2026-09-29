@@ -23,6 +23,24 @@ class Farmer {
 
   factory Farmer.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? const {};
+
+    double readRating(Map<String, dynamic> map) {
+      for (final key in [
+        'rating',
+        'average_rating',
+        'avg_rating',
+        'rating_value'
+      ]) {
+        final value = map[key];
+        if (value is num) return value.toDouble();
+        if (value is String) {
+          final parsed = double.tryParse(value);
+          if (parsed != null) return parsed;
+        }
+      }
+      return 0;
+    }
+
     return Farmer(
       id: doc.id,
       userId: (data['user_id'] as String?) ?? '',
@@ -33,7 +51,7 @@ class Farmer {
           (data['profile_image_url'] as String?),
       farmImageUrl: (data['farm_image_url'] as String?) ??
           (data['farm_photo_url'] as String?),
-      rating: (data['rating'] as num?)?.toDouble() ?? 0,
+      rating: readRating(data),
     );
   }
 }

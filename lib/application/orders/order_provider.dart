@@ -119,10 +119,8 @@ class OrderProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> placeOrder({
-    required String farmerId,
-    required Map<String, dynamic> itemsJson,
-    required double total,
+  Future<List<String>> placeOrders({
+    required List<Map<String, dynamic>> orders,
     DateTime? pickupSlotTime,
     required String marketName,
   }) async {
@@ -137,13 +135,31 @@ class OrderProvider extends ChangeNotifier {
       );
     }
 
-    await _repository.placeOrder(
+    return _repository.placeOrders(
       customerId: customerId,
-      farmerId: farmerId,
-      itemsJson: itemsJson,
-      total: total,
+      orders: orders,
       pickupSlotTime:
           pickupSlotTime,
+      marketName: marketName,
+    );
+  }
+
+  Future<void> placeOrder({
+    required String farmerId,
+    required Map<String, dynamic> itemsJson,
+    required double total,
+    DateTime? pickupSlotTime,
+    required String marketName,
+  }) async {
+    await placeOrders(
+      orders: [
+        {
+          'farmer_id': farmerId,
+          'items_json': itemsJson,
+          'total_price': total,
+        },
+      ],
+      pickupSlotTime: pickupSlotTime,
       marketName: marketName,
     );
   }

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../application/products/product_provider.dart';
@@ -23,6 +24,8 @@ class FarmerProfileScreen extends StatefulWidget {
 class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
   Farmer? _farmer;
   bool _isLoading = true;
+  double? _customerRating;
+  bool _isSubmittingRating = false;
 
   @override
   void initState() {
@@ -34,10 +37,32 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
     final provider = context.read<ProductProvider>();
     if (provider.allProducts.isEmpty) await provider.load();
     final farmer = await provider.farmerById(widget.farmerId);
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final myRating = currentUser == null
+        ? null
+        : await context
+            .read<WishlistProvider>()
+            .myRatingForFarmer(widget.farmerId);
     if (!mounted) return;
     setState(() {
       _farmer = farmer;
+      _customerRating = myRating;
       _isLoading = false;
+    });
+  }
+
+  Future<void> _submitRating(double value) async {
+    if (FirebaseAuth.instance.currentUser == null) return;
+
+    setState(() => _isSubmittingRating = true);
+    await context.read<WishlistProvider>().rateFarmer(widget.farmerId, value);
+    final rated = await context
+        .read<WishlistProvider>()
+        .myRatingForFarmer(widget.farmerId);
+    if (!mounted) return;
+    setState(() {
+      _customerRating = rated;
+      _isSubmittingRating = false;
     });
   }
 
@@ -91,12 +116,23 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
                   children: [
                     Text(farmer.businessName,
                         style: AppTextStyles.headingMedium),
-                                        FutureBuilder<int>(
-                      future: context.read<WishlistProvider>().followersCountFor(farmer.id),
+                    FutureBuilder(
+                      future: Future.wait([
+                        context
+                            .read<WishlistProvider>()
+                            .followersCountFor(farmer.id),
+                        context
+                            .read<WishlistProvider>()
+                            .farmerRatingFor(farmer.id),
+                      ]),
                       builder: (context, snapshot) {
-                        final count = snapshot.data ?? 0;
+                        final count = (snapshot.data?[0] as int?) ?? 0;
+                        final average =
+                            (snapshot.data?[1] as double?) ?? farmer.rating;
+                        final textValue =
+                            average == 0 ? 'New' : average.toStringAsFixed(1);
                         return Text(
-                          '${farmer.rating} ★ • $count followers',
+                          '$textValue ★ • $count followers',
                           style: AppTextStyles.bodyMuted,
                         );
                       },
@@ -129,6 +165,61 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
             Text(farmer.description, style: AppTextStyles.bodyRegular),
             const SizedBox(height: 14),
           ],
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Rate this farmer', style: AppTextStyles.headingMedium),
+                const SizedBox(height: 10),
+                Row(
+                  children: List.generate(5, (index) {
+                    final value = index + 1;
+                    final selected = (_customerRating ?? 0) >= value;
+                    return IconButton(
+                      onPressed: FirebaseAuth.instance.currentUser == null ||
+                              _isSubmittingRating
+                          ? null
+                          : () => _submitRating(value.toDouble()),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      icon: Icon(
+                        selected
+                            ? Icons.star_rounded
+                            : Icons.star_border_rounded,
+                        color: selected
+                            ? AppColors.wheatGold
+                            : AppColors.textSecondary,
+                        size: 30,
+                      ),
+                    );
+                  }),
+                ),
+                if (FirebaseAuth.instance.currentUser == null)
+                  Text(
+                    'Sign in to rate this farmer.',
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.textSecondary),
+                  )
+                else if (_customerRating != null)
+                  Text(
+                    'Your rating: ${_customerRating!.toStringAsFixed(1)} / 5',
+                    style: AppTextStyles.caption,
+                  )
+                else
+                  Text(
+                    'Tap a star to rate this farmer.',
+                    style: AppTextStyles.caption,
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
           OutlinedButton(
             onPressed: () =>
                 context.read<WishlistProvider>().toggleFollow(farmer.id),

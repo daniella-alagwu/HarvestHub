@@ -8,6 +8,7 @@ import '../../../../data/models/cart_item_model.dart';
 import '../../../../data/models/product_model.dart';
 import '../../../../data/models/market_model.dart';
 import '../../../../data/repositories/market_repository.dart';
+import '../checkout/checkout_screen.dart';
 
 import '../../../theme/colors/app_colors.dart';
 import '../../../theme/text_styles.dart';
@@ -341,7 +342,9 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
                       child: PrimaryButton(
                         label: 'Confirm order • ${Product.formatNaira(cart.total)}',
                         onPressed: cart.canCheckout
-                            ? () => _confirmOrder(cart)
+                            ? () => _confirmOrder(
+                                  cart,
+                                )
                             : null,
                         backgroundColor: cart.canCheckout
                             ? AppColors.mainGreen

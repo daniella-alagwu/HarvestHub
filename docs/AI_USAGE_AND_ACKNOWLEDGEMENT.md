@@ -44,7 +44,7 @@ The final screen designs were adjusted to match the requirements and the design 
 
 ### Gemini API
 
-The Gemini API by google was used as part of the Farm Products Assistant feature, called **Flora**, in the HarvestHub application.
+The Gemini API by google (gemini-3.1-flash-lite) was used as part of the Farm Products Assistant feature, called **Flora**, in the HarvestHub application.
 
 Gemini is used to provide AI-generated responses to users' questions about farm products and related information. A predefined-response fallback is also included in the application so that the assistant can still provide basic responses when the Gemini API is unavailable or when an API key has not been configured.
 

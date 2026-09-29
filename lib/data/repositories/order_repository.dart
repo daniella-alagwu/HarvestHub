@@ -114,67 +114,88 @@ class OrderRepository {
     );
   }
 
-  // Create one order for a single farmer
-  Future<String> placeOrder({
+  // Create all farmer sub-orders together so a multi-farmer cart is atomic.
+  Future<List<String>> placeOrders({
     required String customerId,
-    required String farmerId,
-    required Map<String, dynamic> itemsJson,
-    required double total,
+    required List<Map<String, dynamic>> orders,
     DateTime? pickupSlotTime,
     required String marketName,
   }) async {
     final batch = _firestore.batch();
+    final List<DocumentReference> createdOrderRefs = [];
 
-    for (final entry in itemsJson.entries) {
-      final productRef = _firestore.collection('products').doc(entry.key);
-      final productDoc = await productRef.get();
+    for (final orderMap in orders) {
+      final farmerId =
+          orderMap['farmer_id']?.toString() ?? '';
 
-      if (!productDoc.exists) {
-        throw StateError('Product ${entry.key} no longer exists.');
+      final itemsJson = Map<String, dynamic>.from(
+        orderMap['items_json'] as Map<String, dynamic>? ?? {},
+      );
+
+      final total =
+          (orderMap['total_price'] is num)
+              ? (orderMap['total_price'] as num).toDouble()
+              : double.tryParse(
+                      orderMap['total_price']?.toString() ?? '0') ??
+                  0.0;
+
+      // Validate products and prepare stock updates
+      for (final entry in itemsJson.entries) {
+        final productRef = _firestore.collection('products').doc(entry.key);
+
+        final productDoc = await productRef.get();
+
+        if (!productDoc.exists) {
+          throw StateError('Product ${entry.key} no longer exists.');
+        }
+
+        final data = productDoc.data() ?? <String, dynamic>{};
+
+        final stock = (data['stock_qty'] as num?)?.toInt() ??
+            (data['stockQty'] as num?)?.toInt() ??
+            (data['quantity'] as num?)?.toInt() ??
+            0;
+
+        final quantity = _quantityFrom(entry.value);
+
+        final productFarmerId = data['farmer_id']?.toString() ??
+            data['farmerId']?.toString() ??
+            '';
+
+        if (productFarmerId != farmerId) {
+          throw StateError('A cart item belongs to another farmer.');
+        }
+
+        if (quantity <= 0 || quantity > stock) {
+          final name = data['item_name']?.toString() ??
+              data['itemName']?.toString() ??
+              entry.key;
+
+          throw StateError('$name has insufficient stock.');
+        }
+
+        batch.update(productRef, {'stock_qty': stock - quantity});
       }
 
-      final data = productDoc.data() ?? const <String, dynamic>{};
+      final orderRef = _orders.doc();
+      createdOrderRefs.add(orderRef);
 
-      final stock = (data['stock_qty'] as num?)?.toInt() ??
-          (data['stockQty'] as num?)?.toInt() ??
-          (data['quantity'] as num?)?.toInt() ??
-          0;
-
-      final quantity = _quantityFrom(entry.value);
-
-      final productFarmerId =
-          data['farmer_id']?.toString() ?? data['farmerId']?.toString() ?? '';
-
-      if (productFarmerId != farmerId) {
-        throw StateError('A cart item belongs to another farmer.');
-      }
-
-      if (quantity <= 0 || quantity > stock) {
-        final name = data['item_name']?.toString() ??
-            data['itemName']?.toString() ??
-            entry.key;
-
-        throw StateError('$name has insufficient stock.');
-      }
+      batch.set(orderRef, {
+        'customer_id': customerId,
+        'farmer_id': farmerId,
+        'items_json': itemsJson,
+        'pickup_slot_time': pickupSlotTime == null
+            ? null
+            : Timestamp.fromDate(pickupSlotTime),
+        'status': 'Pending',
+        'total_price': total,
+        'market_name': marketName,
+        'created_at': FieldValue.serverTimestamp(),
+      });
     }
 
-    final orderRef = _orders.doc();
-
-    batch.set(orderRef, {
-      'customer_id': customerId,
-      'farmer_id': farmerId,
-      'items_json': itemsJson,
-      'pickup_slot_time':
-          pickupSlotTime == null ? null : Timestamp.fromDate(pickupSlotTime),
-      'status': 'Pending',
-      'total_price': total,
-      'market_name': marketName,
-      'created_at': FieldValue.serverTimestamp(),
-    });
-
     await batch.commit();
-
-    return orderRef.id;
+    return createdOrderRefs.map((ref) => ref.id).toList();
   }
 
   Future<void> updatePickupSlot(
@@ -203,7 +224,8 @@ class OrderRepository {
     }
 
     if (value is Map) {
-      final quantity = value['quantity'];
+      final quantity =
+          value['quantity'];
 
       if (quantity is num) {
         return quantity.ceil();
