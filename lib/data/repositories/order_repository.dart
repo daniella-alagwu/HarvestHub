@@ -5,14 +5,12 @@ import '../models/order_model.dart' as order_model;
 class OrderRepository {
   OrderRepository({
     FirebaseFirestore? firestore,
-  }) : _firestore =
-          firestore ?? FirebaseFirestore.instance;
+  }) : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _firestore;
 
-  CollectionReference<Map<String, dynamic>>
-      get _orders =>
-          _firestore.collection('orders');
+  CollectionReference<Map<String, dynamic>> get _orders =>
+      _firestore.collection('orders');
 
   Future<List<order_model.Order>> fetchActive(
     String customerId,
@@ -25,14 +23,11 @@ class OrderRepository {
         .get();
 
     final orders = _sortNewest(
-      snapshot.docs
-          .map(order_model.Order.fromFirestore)
-          .toList(),
+      snapshot.docs.map(order_model.Order.fromFirestore).toList(),
     );
 
     return orders.where((order) {
-      final status =
-          order.status.toLowerCase();
+      final status = order.status.toLowerCase();
 
       return status != 'completed' &&
           status != 'picked up' &&
@@ -51,14 +46,11 @@ class OrderRepository {
         .get();
 
     final orders = _sortNewest(
-      snapshot.docs
-          .map(order_model.Order.fromFirestore)
-          .toList(),
+      snapshot.docs.map(order_model.Order.fromFirestore).toList(),
     );
 
     return orders.where((order) {
-      final status =
-          order.status.toLowerCase();
+      final status = order.status.toLowerCase();
 
       return status == 'completed' ||
           status == 'picked up' ||
@@ -66,8 +58,7 @@ class OrderRepository {
     }).toList();
   }
 
-  Stream<List<order_model.Order>>
-      watchForCustomer(
+  Stream<List<order_model.Order>> watchForCustomer(
     String customerId,
   ) {
     return _orders
@@ -80,17 +71,14 @@ class OrderRepository {
           (snapshot) => _sortNewest(
             snapshot.docs
                 .map(
-                  order_model
-                      .Order
-                      .fromFirestore,
+                  order_model.Order.fromFirestore,
                 )
                 .toList(),
           ),
         );
   }
 
-  Stream<List<order_model.Order>>
-      watchForFarmer(
+  Stream<List<order_model.Order>> watchForFarmer(
     String farmerId,
   ) {
     return _orders
@@ -103,9 +91,7 @@ class OrderRepository {
           (snapshot) => _sortNewest(
             snapshot.docs
                 .map(
-                  order_model
-                      .Order
-                      .fromFirestore,
+                  order_model.Order.fromFirestore,
                 )
                 .toList(),
           ),
@@ -115,8 +101,7 @@ class OrderRepository {
   Future<order_model.Order> getOrderById(
     String orderId,
   ) async {
-    final doc =
-        await _orders.doc(orderId).get();
+    final doc = await _orders.doc(orderId).get();
 
     if (!doc.exists) {
       throw StateError(
@@ -136,29 +121,93 @@ class OrderRepository {
     DateTime? pickupSlotTime,
     required String marketName,
   }) async {
-    if (orders.isEmpty) {
-      throw ArgumentError('An order must contain at least one farmer group.');
+    final batch =
+        _firestore.batch();
+
+    for (final entry
+        in itemsJson.entries) {
+      final productRef = _firestore
+          .collection('products')
+          .doc(entry.key);
+
+      final productDoc =
+          await productRef.get();
+
+      if (!productDoc.exists) {
+        throw StateError(
+          'Product ${entry.key} no longer exists.',
+        );
+      }
+
+      final data = productDoc.data() ??
+          const <String, dynamic>{};
+
+      final stock =
+          (data['stock_qty'] as num?)
+                  ?.toInt() ??
+              (data['stockQty'] as num?)
+                  ?.toInt() ??
+              (data['quantity'] as num?)
+                  ?.toInt() ??
+              0;
+
+      final quantity =
+          _quantityFrom(entry.value);
+
+      final productFarmerId =
+          data['farmer_id']?.toString() ??
+              data['farmerId']?.toString() ??
+              '';
+
+      if (productFarmerId != farmerId) {
+        throw StateError(
+          'A cart item belongs to another farmer.',
+        );
+      }
+
+      if (quantity <= 0 ||
+          quantity > stock) {
+        final name =
+            data['item_name']?.toString() ??
+                data['itemName']?.toString() ??
+                entry.key;
+
+        throw StateError(
+          '$name has insufficient stock.',
+        );
+      }
+
+      batch.update(
+        productRef,
+        {
+          'stock_qty': stock - quantity,
+        },
+      );
     }
-    final batch = _firestore.batch();
-    final orderRefs = <DocumentReference<Map<String, dynamic>>>[];
-    for (final order in orders) {
-      final ref = _orders.doc();
-      orderRefs.add(ref);
-      batch.set(ref, {
+
+    final orderRef =
+        _orders.doc();
+
+    batch.set(
+      orderRef,
+      {
         'customer_id': customerId,
-        'farmer_id': order['farmer_id'],
-        'items_json': order['items_json'],
-        'pickup_slot_time': pickupSlotTime == null
-            ? null
-            : Timestamp.fromDate(pickupSlotTime),
+        'farmer_id': farmerId,
+        'items_json': itemsJson,
+        'pickup_slot_time':
+            pickupSlotTime == null
+                ? null
+                : Timestamp.fromDate(
+                    pickupSlotTime,
+                  ),
         'status': 'Pending',
-        'total_price': order['total_price'],
+        'total_price': total,
         'market_name': marketName,
-        'payment_method': 'demo_card',
-        'payment_status': 'demo_only',
-        'created_at': FieldValue.serverTimestamp(),
-      });
-    }
+        'created_at':
+            FieldValue.serverTimestamp(),
+      },
+    );
+
     await batch.commit();
     return orderRefs.map((ref) => ref.id).toList();
   }
@@ -168,8 +217,7 @@ class OrderRepository {
     DateTime newSlotTime,
   ) async {
     await _orders.doc(orderId).update({
-      'pickup_slot_time':
-          Timestamp.fromDate(newSlotTime),
+      'pickup_slot_time': Timestamp.fromDate(newSlotTime),
     });
   }
 
@@ -182,17 +230,31 @@ class OrderRepository {
     });
   }
 
-  static List<order_model.Order>
-      _sortNewest(
+  static int _quantityFrom(
+    Object? value,
+  ) {
+    if (value is num) {
+      return value.ceil();
+    }
+
+    if (value is Map) {
+      final quantity =
+          value['quantity'];
+
+      if (quantity is num) {
+        return quantity.ceil();
+      }
+    }
+
+    return 0;
+  }
+
+  static List<order_model.Order> _sortNewest(
     List<order_model.Order> orders,
   ) {
     orders.sort(
-      (a, b) =>
-          (b.createdAt ??
-                  DateTime(1970))
-              .compareTo(
-        a.createdAt ??
-            DateTime(1970),
+      (a, b) => (b.createdAt ?? DateTime(1970)).compareTo(
+        a.createdAt ?? DateTime(1970),
       ),
     );
 

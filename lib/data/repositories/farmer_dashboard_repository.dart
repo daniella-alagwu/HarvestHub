@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../services/cloudinary_service.dart';
+import '../models/farmer_account.dart';
 import '../models/product_model.dart';
 import '../models/order_model.dart';
 import '../models/notification_model.dart';
@@ -21,6 +24,109 @@ class FarmerDashboardRepository {
       'name': (userDoc.data()?['name'] as String?) ?? '',
       'farmName': (farmerDoc.data()?['business_name'] as String?) ?? '',
     };
+  }
+
+  Stream<FarmerAccount> watchFarmerAccount(String uid) {
+    late final StreamController<FarmerAccount> controller;
+    DocumentSnapshot<Map<String, dynamic>>? userSnap;
+    DocumentSnapshot<Map<String, dynamic>>? farmerSnap;
+    StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? userSub;
+    StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? farmerSub;
+
+    void emit() {
+      final u = userSnap;
+      final f = farmerSnap;
+      if (u == null || f == null) return;
+      controller.add(FarmerAccount.fromDocs(u, f));
+    }
+
+    controller = StreamController<FarmerAccount>(
+      onListen: () {
+        userSub = _db.collection('users').doc(uid).snapshots().listen(
+          (snap) {
+            userSnap = snap;
+            emit();
+          },
+          onError: controller.addError,
+        );
+        farmerSub = _db.collection('farmers').doc(uid).snapshots().listen(
+          (snap) {
+            farmerSnap = snap;
+            emit();
+          },
+          onError: controller.addError,
+        );
+      },
+      onCancel: () async {
+        await userSub?.cancel();
+        await farmerSub?.cancel();
+      },
+    );
+    return controller.stream;
+  }
+
+  Future<String> uploadProfileImage(Uint8List bytes, {required String name}) {
+    return _cloudinary.uploadImage(bytes, filename: name);
+  }
+
+  Future<void> updateFarmerProfile({
+    required String uid,
+    required String name,
+    required String phone,
+    required String farmName,
+    required String marketLocation,
+    required String description,
+    required String tagline,
+    Uint8List? newAvatarBytes,
+    Uint8List? newFarmImageBytes,
+  }) async {
+    String? avatarUrl;
+    String? farmImageUrl;
+
+    if (newAvatarBytes != null) {
+      avatarUrl = await _cloudinary.uploadImage(
+        newAvatarBytes,
+        filename: 'profile_$uid.jpg',
+      );
+    }
+    if (newFarmImageBytes != null) {
+      farmImageUrl = await _cloudinary.uploadImage(
+        newFarmImageBytes,
+        filename: 'farm_$uid.jpg',
+      );
+    }
+
+    final userUpdate = <String, dynamic>{
+      'name': name.trim(),
+      'phone': phone.trim(),
+      if (avatarUrl != null) 'avatar_url': avatarUrl,
+    };
+    final farmerUpdate = <String, dynamic>{
+      'business_name': farmName.trim(),
+      'market_location': marketLocation.trim(),
+      'description': description.trim(),
+      'tagline': tagline.trim(),
+      if (avatarUrl != null) 'avatar_url': avatarUrl,
+      if (farmImageUrl != null) 'farm_image_url': farmImageUrl,
+    };
+
+    await _db
+        .collection('users')
+        .doc(uid)
+        .set(userUpdate, SetOptions(merge: true));
+    await _db
+        .collection('farmers')
+        .doc(uid)
+        .set(farmerUpdate, SetOptions(merge: true));
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null && user.uid == uid) {
+        await user.updateDisplayName(name.trim());
+        if (avatarUrl != null) await user.updatePhotoURL(avatarUrl);
+      }
+    } catch (_) {
+    }
   }
 
   Stream<List<ProductModel>> streamProducts(String farmerId) {
@@ -45,6 +151,7 @@ class FarmerDashboardRepository {
     required String farmerId,
     required String itemName,
     required String category,
+    required String unit,
     required String description,
     required double pricePerUnit,
     required int stockQty,
@@ -61,6 +168,7 @@ class FarmerDashboardRepository {
       'item_name': itemName,
       'description': description,
       'category': category,
+      'unit': unit,
       'price_per_unit': pricePerUnit,
       'stock_qty': stockQty,
       'image_url': imageUrl,
@@ -73,6 +181,7 @@ class FarmerDashboardRepository {
     required String farmerId,
     required String itemName,
     required String category,
+    required String unit,
     required String description,
     required double pricePerUnit,
     required int stockQty,
@@ -89,6 +198,7 @@ class FarmerDashboardRepository {
       'item_name': itemName,
       'description': description,
       'category': category,
+      'unit': unit,
       'price_per_unit': pricePerUnit,
       'stock_qty': stockQty,
       'image_url': imageUrl,
@@ -111,8 +221,6 @@ class FarmerDashboardRepository {
     });
   }
 
-  // NOTIFICATIONS
-
   Stream<List<NotificationModel>> streamNotifications(String farmerId) {
     return _db
         .collection('notifications')
@@ -124,9 +232,6 @@ class FarmerDashboardRepository {
             .toList());
   }
 
-  /// Creates a notification doc only if one doesn't already exist for this
-  /// exact event (deterministic ID), so read/unread state isn't reset every
-  /// time the dashboard rebuilds this list.
   Future<void> _ensureNotification({
     required String id,
     required String farmerId,
@@ -148,12 +253,6 @@ class FarmerDashboardRepository {
     });
   }
 
-  /// Checks every product's stock against three thresholds (10, 5, out of
-  /// stock) and creates a friendly notification the first time each
-  /// threshold is hit. Each threshold has its own deterministic ID per
-  /// product, so a farmer only gets one notification per threshold crossed
-  /// — restocking above 10 and dropping again would re-trigger it, since
-  /// that's a genuinely new low-stock event.
   Future<void> _syncStockNotifications({
     required String farmerId,
     required List<ProductModel> products,
@@ -206,8 +305,6 @@ class FarmerDashboardRepository {
     }
   }
 
-  /// Call this on every dashboard load with the FULL product list (not just
-  /// already-low-stock ones) so all three stock thresholds get checked.
   Future<void> syncNotifications({
     required String farmerId,
     required List<ProductModel> allProducts,

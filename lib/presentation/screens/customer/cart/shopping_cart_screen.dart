@@ -5,6 +5,7 @@ import '../../../../application/cart/cart_provider.dart';
 import '../../../../application/orders/order_provider.dart';
 
 import '../../../../data/models/cart_item_model.dart';
+import '../../../../data/models/product_model.dart';
 import '../../../../data/models/market_model.dart';
 import '../../../../data/repositories/market_repository.dart';
 import '../checkout/checkout_screen.dart';
@@ -119,7 +120,6 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
       cart.pickupSlot?.label,
     );
 
-    var feeRemaining = cart.fee;
 
     try {
       for (final entry in groups.entries) {
@@ -144,16 +144,13 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
               sum + item.lineTotal,
         );
 
-        final groupFee = feeRemaining > 0 ? feeRemaining : 0;
-
-        feeRemaining -= groupFee;
 
         await context.read<OrderProvider>().placeOrder(
               farmerId: entry.key,
               marketName: cart.pickupMarket?.marketName ?? '',
               pickupSlotTime: pickupTime,
               itemsJson: itemsJson,
-              total: subtotal + groupFee,
+              total: subtotal,
             );
       }
 
@@ -343,13 +340,10 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
                         16,
                       ),
                       child: PrimaryButton(
-                        label: 'Confirm order • '
-                            '₦${cart.total.toStringAsFixed(2)}',
+                        label: 'Confirm order • ${Product.formatNaira(cart.total)}',
                         onPressed: cart.canCheckout
-                            ? () => Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => const CheckoutScreen(),
-                                  ),
+                            ? () => _confirmOrder(
+                                  cart,
                                 )
                             : null,
                         backgroundColor: cart.canCheckout
@@ -433,7 +427,7 @@ class _CartItemRow extends StatelessWidget {
                 height: 4,
               ),
               Text(
-                '₦${item.lineTotal.toStringAsFixed(2)}',
+                Product.formatNaira(item.lineTotal),
                 style: AppTextStyles.bodyRegular.copyWith(
                   color: AppColors.deepGreen,
                   fontWeight: FontWeight.w700,
@@ -552,11 +546,6 @@ class _TotalsCard extends StatelessWidget {
             label: 'Subtotal',
             value: cart.subtotal,
           ),
-          const SizedBox(height: 6),
-          _TotalsRow(
-            label: 'Market fee',
-            value: cart.fee,
-          ),
           const Padding(
             padding: EdgeInsets.symmetric(
               vertical: 10,
@@ -607,7 +596,7 @@ class _TotalsRow extends StatelessWidget {
           style: style,
         ),
         Text(
-          '₦${value.toStringAsFixed(2)}',
+          Product.formatNaira(value),
           style: style,
         ),
       ],
