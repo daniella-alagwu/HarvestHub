@@ -30,6 +30,8 @@ import '../../../../data/repositories/user_repository.dart';
 import '../../../../data/models/market_model.dart';
 import '../../../../data/repositories/market_repository.dart';
 
+import '../../../widgets/responsive_layout.dart';
+
 class ProductCatalogScreen extends StatefulWidget {
   const ProductCatalogScreen({
     super.key,
@@ -191,18 +193,15 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
           onRefresh: () =>
               context.read<ProductProvider>().load(),
 
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              16,
+                    child: ListView(
+            padding: EdgeInsets.fromLTRB(
+              pageSidePadding(context),
               12,
-              16,
+              pageSidePadding(context),
               24,
             ),
 
             children: [
-              // --------------------------------------------------
-              // TOP HEADER
-              // --------------------------------------------------
 
               Row(
                 crossAxisAlignment:
@@ -423,13 +422,7 @@ class _ProductCatalogScreenState extends State<ProductCatalogScreen> {
                   itemCount:
                       products.freshToday.length,
 
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 14,
-                    childAspectRatio: 0.72,
-                  ),
+                 gridDelegate: productGridDelegate,
 
                   itemBuilder: (
                     context,

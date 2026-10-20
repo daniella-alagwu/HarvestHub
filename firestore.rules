@@ -131,13 +131,17 @@ service cloud.firestore {
 
       allow update: if isAdmin();
 
+      // Customers may only reduce stock (checkout), nothing else.
+      allow update: if isCustomer()
+        && changedKeys().hasOnly(['stock_qty'])
+        && request.resource.data.stock_qty is number
+        && request.resource.data.stock_qty >= 0
+        && request.resource.data.stock_qty < resource.data.stock_qty;
+
       allow delete: if isFarmer()
         && resource.data.farmer_id == request.auth.uid;
 
       allow delete: if isAdmin();
-
-      allow update: if signedIn()
-        && false;
     }
 
     match /orders/{orderId} {

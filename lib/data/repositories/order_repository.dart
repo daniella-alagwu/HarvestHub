@@ -190,6 +190,8 @@ class OrderRepository {
         'status': 'Pending',
         'total_price': total,
         'market_name': marketName,
+        'payment_method': 'demo_card',
+        'payment_status': 'demo_only',
         'created_at': FieldValue.serverTimestamp(),
       });
     }

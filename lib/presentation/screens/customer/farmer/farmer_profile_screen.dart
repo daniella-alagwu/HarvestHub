@@ -9,6 +9,7 @@ import '../../../theme/text_styles.dart';
 import '../../../widgets/empty_state.dart';
 import '../../../widgets/product_card.dart';
 import '../product/product_details_screen.dart';
+import '../../../widgets/responsive_layout.dart';
 
 class FarmerProfileScreen extends StatefulWidget {
   const FarmerProfileScreen({super.key, required this.farmerId});
@@ -243,12 +244,7 @@ class _FarmerProfileScreenState extends State<FarmerProfileScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: products.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 14,
-                childAspectRatio: 0.72,
-              ),
+              gridDelegate: productGridDelegate,
               itemBuilder: (context, index) {
                 final product = products[index];
                 return ProductCard(
